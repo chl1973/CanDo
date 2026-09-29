@@ -5,7 +5,7 @@
 ## 这是什么
 - 产品：CanDo 可为（原“科研竞赛工作台”），理念 “Everyone can do research. 人人都能做科研。”当前版本见 `app.go` 的 `AppVersion`（1.14.0）。
 - 形态：Go 单文件程序（只用标准库），运行在老师的 Windows 电脑上，浏览器打开网页界面；同一 Wi-Fi 的手机通过安卓 App（`android/`）或 iPhone 主屏幕网页 / iOS 工程（`ios/`）访问。数据全部在本机：`%LOCALAPPDATA%\KeyanWorkbench\data`（目录名保持旧名，不要改，否则升级丢数据）。
-- 下一阶段方向：见 `docs/平台化方案.md`（打破学术壁垒的公开交流平台）。进展记录见 `TEST_REPORT.md` 和 `build/使用说明.txt`。
+- 下一阶段方向：见 `docs/平台化方案.md`（打破学术壁垒的公开交流平台）；第一步“论坛模式 / 校内联盟版”的方案见 `docs/论坛模式.md`。进展记录见 `TEST_REPORT.md` 和 `build/使用说明.txt`。
 
 ## 常用命令
 ```bash
