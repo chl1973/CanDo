@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="CanDo">
+<title>安装 CanDo App</title>
+<link rel="icon" href="/favicon.png">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main style="max-width:560px;margin:0 auto;padding:20px 16px 40px">
+  <div class="row" style="margin-bottom:12px"><img src="/icon-192.png" alt="" style="width:56px;height:56px;border-radius:12px"><div><h2 style="margin:0">CanDo</h2><div class="muted">手机 App · 连接老师电脑使用</div></div></div>
+
+  <div class="card" id="ios">
+    <h3>苹果手机（iPhone / iPad）</h3>
+    <p>苹果手机用“添加到主屏幕”安装：桌面上会出现“CanDo”图标，打开后全屏显示，用起来和 App 一样，不需要 App Store。</p>
+    <ol class="steps-ios">
+      <li><b>用 Safari 打开</b>（在微信里请点右上角“…” → “在默认浏览器中打开”）。</li>
+      <li>点下面的按钮打开工作台首页，先登录。<br><a id="home" href="/"><button class="pri" type="button" style="width:100%;padding:12px;font-size:17px;margin-top:6px">打开工作台</button></a></li>
+      <li>点屏幕底部（iPad 在右上角）的“分享”按钮 <span class="shareico" aria-label="分享图标"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg></span>，往下找到<b>“添加到主屏幕”</b>，点右上角“添加”。</li>
+      <li>以后从桌面的“CanDo”图标打开即可，登录状态会保留。</li>
+    </ol>
+    <p class="muted">老师如果有 Mac 电脑和苹果开发者账号，也可以用源码包里的 ios 文件夹编译原生 App（说明见 ios/README.md）。</p>
+  </div>
+
+  <div class="card" id="android">
+    <h3>安卓手机</h3>
+    <a href="/download/keyan-workbench.apk" download><button class="pri" type="button" style="width:100%;padding:12px;font-size:17px">下载安装包（约 50 KB）</button></a>
+    <ol style="padding-left:20px;line-height:1.9;margin:12px 0 0">
+      <li>点上面的按钮下载，下载完成后点“打开”。</li>
+      <li>如果提示“禁止安装未知应用”，按提示到设置里允许<b>当前浏览器</b>安装应用，再返回点“安装”。</li>
+      <li>如果提示“未经检测 / 风险应用”，这是因为 App 没有上架应用商店，点“继续安装”即可。</li>
+      <li>打开“CanDo”，输入下面的地址点“连接”，然后登录：</li>
+    </ol>
+    <p style="font-size:20px;text-align:center;margin:10px 0"><code id="addr">（地址）</code></p>
+    <p class="muted">建议在微信里长按二维码识别后，点右上角“…” → “在浏览器中打开”再下载；微信内置浏览器可能无法直接下载安装包。</p>
+  </div>
+
+  <p class="muted">手机和老师电脑需要连同一个 Wi-Fi；所有资料都保存在老师电脑上。</p>
+</main>
+<script src="/install.js"></script>
+</body>
+</html>
