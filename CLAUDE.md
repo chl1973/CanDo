@@ -5,7 +5,7 @@
 ## 这是什么
 - 产品：CanDo 可为（原“科研竞赛工作台”），理念 “Everyone can do research. 人人都能做科研。”当前版本见 `app.go` 的 `AppVersion`（1.14.0）。
 - 形态：Go 单文件程序（只用标准库），运行在老师的 Windows 电脑上，浏览器打开网页界面；同一 Wi-Fi 的手机通过安卓 App（`android/`）或 iPhone 主屏幕网页 / iOS 工程（`ios/`）访问。数据全部在本机：`%LOCALAPPDATA%\KeyanWorkbench\data`（目录名保持旧名，不要改，否则升级丢数据）。
-- 下一阶段方向：见 `docs/平台化方案.md`（打破学术壁垒的公开交流平台）。进展记录见 `TEST_REPORT.md` 和 `build/使用说明.txt`。
+- 下一阶段方向：见 `docs/平台化方案.md`（打破学术壁垒的公开交流平台）；第一步“论坛模式 / 校内联盟版”的方案见 `docs/论坛模式.md`。进展记录见 `TEST_REPORT.md` 和 `build/使用说明.txt`。
 
 ## 常用命令
 ```bash
@@ -25,6 +25,7 @@ tools/e2e/run.sh                                   # 浏览器端到端测试（
 ## 必须遵守的约定
 - **CSP 禁止内联脚本**：不要写 `onclick=`。用 `data-act="名称"` / `data-change` / `data-input` / `data-submit`，在 `actions` 里注册处理函数（见 `core.js`）。
 - **颜色只用 `web/style.css` 顶部的变量**（浅色 / 深色两套）。主色深群青 #1E2AB0，纸色 #F6F4EE，墨色 #14161F，深色模式主色 #7C86FF。图标用 `index.html` 里的 SVG sprite：`<svg class="ic"><use href="#i-xxx"/></svg>`。
+- **接口**：前后端只通过 `/api/` 接口来往，清单见 `docs/API.md`（自动生成）。新接口在 `app.go` 的 `apiMux` 里登记，行末写一句 `// 说明`；改了接口运行 `UPDATE_API_DOC=1 go test -run TestAPIDoc .` 更新清单。`TestFrontendAPICalls` 会检查前端用到的接口后端都有。改接口尽量只加字段，不删不改含义。
 - **耗时的 AI 接口**用 `a.bg("任务名", handler)` 包装，前端用 `apiBg(...)`，这样可以后台运行、离开页面不中断。
 - **模型调用**走 `modelFor / callValidated`，输出必须是 JSON 并在后端校验引用 ID（不存在的出处要标出来，不能让模型编造）。
 - **权限**：无权访问和不存在都返回 404；个人资料只有本人可见，共享的论文对组内只读；本机智能体只允许本机访问、只能碰授权文件夹、修改要用户确认、不读密钥类文件。
