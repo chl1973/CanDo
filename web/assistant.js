@@ -288,9 +288,10 @@ function renderSide() {
 // ----- 文件夹与权限 -----
 async function renderFolders() {
   const box = $("#agSideBody");
-  const [pol, eng] = await Promise.all([api("GET", "/api/agent/policy"), api("GET", "/api/latex/engine")]);
+  const [pol, eng, ext] = await Promise.all([api("GET", "/api/agent/policy"), api("GET", "/api/latex/engine"), api("GET", "/api/agent/extools").catch(() => ({ services: [] }))]);
   if (A.side !== "folders") return;
   A.policy = pol;
+  A.ext = ext.services || [];
   const opt = (v, cur, label) => `<option value="${v}" ${v === cur ? "selected" : ""}>${label}</option>`;
   box.innerHTML = `<h4 style="margin-top:0">授权文件夹</h4>
     ${A.folders.length ? A.folders.map((f, i) => `<div class="row folder">
@@ -311,11 +312,46 @@ async function renderFolders() {
       <p class="muted">删除、改注册表、下载执行、关机等危险命令<b>每次都会问</b>，不能设为始终允许。</p>
       <button type="submit" class="pri sm">保存权限</button>
     </form>
+    ${renderExt()}
     <h4>LaTeX 编译</h4>
     ${eng.engine.found ? `<p>已检测到 <b>${esc(eng.engine.dist)}</b> ${esc(eng.engine.version || "")}（${eng.engine.tectonic ? "便携版，第一次编译会自动下载宏包，需要联网" : (eng.engine.xelatex ? "XeLaTeX" : "") + (eng.engine.xelatex && eng.engine.pdflatex ? " / " : "") + (eng.engine.pdflatex ? "pdfLaTeX" : "")}）。智能体可以编译论文、根据报错自动修改。</p>`
       : `<p class="muted">没有检测到 LaTeX。最省事的是下载便携版 <b>Tectonic</b>（约 20 MB，不用安装，第一次编译自动下载宏包）：${eng.local ? tectonicBtn() : "（请在运行工作台的电脑上操作）"}</p>
         <p class="muted">需要完整环境时，从 <a href="${esc(eng.help.texlive)}" target="_blank" rel="noopener">清华镜像</a> 安装 TeX Live，或安装 <a href="${esc(eng.help.miktex)}" target="_blank" rel="noopener">MiKTeX</a>。也可以手动下载 <a href="${esc(eng.help.tectonic_page)}" target="_blank" rel="noopener">Tectonic</a>，把 tectonic.exe 放到 <code>${esc(eng.help.tectonic_dir || "")}</code>。</p><button class="sm" data-act="agTexRefresh">重新检测</button>`}`;
 }
+// ----- 外部工具服务 -----
+function renderExt() {
+  return `<h4>外部工具服务</h4>
+    <p class="muted">合作者写的独立小程序（例如 Python）可以把画图、插图进 Word 等能力做成“工具”交给智能体使用。只能接这台电脑上的服务；文件由工作台读出后交给它，它生成的文件交回工作台，由你确认后才保存，外部服务碰不到你的文件夹。接口约定见源码里的 <code>docs/外部工具接口.md</code>。</p>
+    ${A.ext.length ? A.ext.map((s, i) => `<div class="extsvc">
+      <div class="row folder"><b>${esc(s.name)}</b>
+        ${s.ok ? `<span class="tag ok">已连接 · ${s.tools.length} 个工具</span>` : `<span class="tag bad" title="${esc(s.error)}">${esc(s.error || "连不上")}</span>`}<span class="sp"></span>
+        <select data-change="agExtToggle" data-i="${i}" style="width:auto"><option value="1" ${s.enabled ? "selected" : ""}>启用</option><option value="0" ${s.enabled ? "" : "selected"}>停用</option></select>
+        <button class="sm danger" data-act="agExtDel" data-i="${i}">移除</button></div>
+      <p class="muted" style="margin:2px 0"><code>${esc(s.url)}</code>${s.ok && s.service ? " · " + esc(s.service) + (s.version ? " " + esc(s.version) : "") : ""}</p>
+      ${s.tools.map((t) => `<div class="row" style="margin:2px 0 2px 12px"><span title="${esc(t.description)}">${esc(t.title)}</span><code class="muted">${esc(t.full)}</code>${t.always ? `<span class="tag warn">始终允许</span><button class="sm" data-act="agExtRevoke" data-i="${i}" data-t="${esc(t.name)}">改回每次询问</button>` : ""}</div>`).join("")}
+    </div>`).join("") : '<p class="muted">还没有接入外部工具服务。</p>'}
+    <form data-submit="agExtAdd" class="row" style="margin-top:8px">
+      <input name="name" required placeholder="短名，如 fig" pattern="[a-z][a-z0-9_]{0,15}" title="小写英文字母开头，只含小写字母、数字、下划线" style="width:110px">
+      <input name="url" required placeholder="http://127.0.0.1:8765" style="flex:1;min-width:160px">
+      <button type="submit">接入</button>${A.ext.length ? '<button type="button" class="sm" data-act="agExtRefresh">重新检查</button>' : ""}</form>`;
+}
+async function saveExt(list) {
+  const r = await api("PUT", "/api/agent/extools", { services: list.map((s) => ({ name: s.name, url: s.url, enabled: !!s.enabled, allow: s.allow || [] })) });
+  A.ext = r.services || [];
+  renderSide();
+}
+actions.agExtAdd = async (f) => {
+  await saveExt([...A.ext, { name: f.name.value.trim().toLowerCase(), url: f.url.value.trim(), enabled: true, allow: [] }]);
+  const s = A.ext[A.ext.length - 1];
+  toast(s && s.ok ? `已接入，发现 ${s.tools.length} 个工具` : "已保存，但现在连不上：" + (s ? s.error : ""), !(s && s.ok));
+};
+actions.agExtDel = (el) => saveExt(A.ext.filter((_, i) => i !== Number(el.dataset.i)));
+actions.agExtToggle = (el) => { const l = A.ext.map((s) => ({ ...s })); l[Number(el.dataset.i)].enabled = el.value === "1"; return saveExt(l); };
+actions.agExtRevoke = (el) => { const l = A.ext.map((s) => ({ ...s })); const s = l[Number(el.dataset.i)]; s.allow = (s.allow || []).filter((t) => t !== el.dataset.t); return saveExt(l); };
+actions.agExtRefresh = async () => {
+  A.ext = (await api("GET", "/api/agent/extools?refresh=1")).services || [];
+  renderSide();
+};
 async function saveFolders(list) {
   A.folders = await api("PUT", "/api/agent/folders", { folders: list.map((f) => ({ path: f.path, write: !!f.write })) });
   renderSide();
@@ -573,11 +609,11 @@ function renderApproval(p) {
   if (A.pending && A.pending.id === p.id) return;
   A.pending = p;
   box.innerHTML = `<div class="approve ${p.danger ? "danger" : ""}">
-    <div class="row"><b>${p.kind === "open" ? "🗂 智能体想打开" : "⌨ 智能体想运行命令"}：${esc(p.title)}</b></div>
+    <div class="row"><b>${p.kind === "ext" ? "🧩 智能体想" + esc(p.title) : (p.kind === "open" ? "🗂 智能体想打开" : "⌨ 智能体想运行命令") + "：" + esc(p.title)}</b></div>
     <pre>${esc(p.detail)}</pre>
     ${p.danger ? `<div class="dangertext">⚠ ${esc(p.danger)}，请看清楚再决定</div>` : ""}
     <div class="row"><button class="pri sm" data-act="agApprove" data-d="once">允许一次</button>
-      ${p.can_always ? `<button class="sm" data-act="agApprove" data-d="always" title="以后运行 ${esc(p.always_key)} 开头的命令不再询问">始终允许“${esc(p.always_key)}”</button>` : ""}
+      ${p.can_always ? `<button class="sm" data-act="agApprove" data-d="always" title="${p.kind === "ext" ? "以后调用这个外部工具不再询问（可在“文件夹与权限”里改回）" : "以后运行 " + esc(p.always_key) + " 开头的命令不再询问"}">始终允许“${esc(p.always_key)}”</button>` : ""}
       <button class="sm danger" data-act="agApprove" data-d="deny">拒绝</button><span class="sp"></span><span class="muted">10 分钟内不处理会自动拒绝</span></div></div>`;
   box.scrollIntoView({ block: "nearest", behavior: "smooth" });
 }
@@ -621,8 +657,13 @@ actions.agGoChange = (el) => {
 };
 
 const ST = { pending: ["待确认", "warn"], applied: ["已完成", "ok"], rejected: ["未采纳", ""], undone: ["已撤销", ""], conflict: ["未执行（有冲突）", "bad"] };
-const KIND = { create: "新建", modify: "修改", move: "移动", copy: "复制", mkdir: "新建文件夹", delete: "删除", pdf: "生成 PDF", files: "保存图片" };
-const kindName = (c) => (c.kind === "office" ? (c.sub === "create" ? "新建 Word" : "修改 Word") : KIND[c.kind] || c.kind);
+const KIND = { create: "新建", modify: "修改", move: "移动", copy: "复制", mkdir: "新建文件夹", delete: "删除", pdf: "生成 PDF", files: "保存文件" };
+const OFFICE = { docx: "Word", xlsx: "Excel", xlsm: "Excel", pptx: "PPT" };
+const kindName = (c) => {
+  if (c.kind !== "office") return KIND[c.kind] || c.kind;
+  const t = OFFICE[(c.path.split(".").pop() || "").toLowerCase()];
+  return t ? (c.sub === "create" ? "新建 " : "修改 ") + t : c.sub === "create" ? "新建" : "替换文件";
+};
 const base = (p) => (p || "").split(/[\\/]/).pop();
 function changeBody(c) {
   if (c.kind === "pdf") {

@@ -53,6 +53,10 @@ def agent4(sysm,msgs):
                {"say":"再生成一份修改说明","tool":"make_docx","args":{"path":folder+"/修改说明.docx","title":"修改说明","reason":"记录这次改了什么","content":"# 修改说明\n\n| 位置 | 修改 |\n|---|---|\n| 摘要 | 补充了研究方法 |\n| 引言 | 新增一段研究缺口 |\n\n<p style=\"text-align: right;\">CanDo 自动生成</p>"}},
                {"reply":"已提交 2 处 Word 修改（保留原有格式和图片）和一份修改说明，请在右侧确认。"}]
         return steps[min(n,3)]
+    if "柱状图" in first:
+        steps=[{"say":"用外部工具画图","tool":"ext.fig.bar_chart","args":{"values":[3,5,2],"labels":["甲","乙","丙"],"title":"三组对比","save_to":folder}},
+               {"reply":"柱状图已生成，请在右侧确认保存。"}]
+        return steps[min(n,1)]
     if "整理" in first:
         steps=[{"say":"先建一个文件夹放图片","tool":"file_op","args":{"op":"mkdir","to":folder+"/figs","reason":"放图片"}},
                {"tool":"file_op","args":{"op":"move","from":folder+"/plot.png","to":folder+"/figs/plot.png","reason":"图片归类"}},

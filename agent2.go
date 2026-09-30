@@ -67,7 +67,7 @@ func (a *App) savePolicy(me *Me, p AgentPolicy) error {
 
 type agentApproval struct {
 	ID        string    `json:"id"`
-	Kind      string    `json:"kind"` // command / open
+	Kind      string    `json:"kind"` // command / open / ext（外部工具）
 	Title     string    `json:"title"`
 	Detail    string    `json:"detail"`
 	Danger    string    `json:"danger,omitempty"`
@@ -152,6 +152,9 @@ func (a *App) askApproval(s *agentSession, me *Me, ap *agentApproval) error {
 			pol.AllowCmds = append(pol.AllowCmds, ap.AlwaysKey)
 		} else if ap.Kind == "open" {
 			pol.Open = "auto"
+		} else if ap.Kind == "ext" {
+			a.extAllowAlways(me, ap.AlwaysKey)
+			return nil
 		}
 		a.savePolicy(me, pol)
 		return nil
@@ -1182,11 +1185,12 @@ func (a *App) agentSystemPrompt(me *Me, s *agentSession) string {
 	}
 	b.WriteString("\n操作系统：" + runtime.GOOS + "；今天：" + time.Now().Format("2006-01-02 Monday"))
 	if s.Unattended {
-		b.WriteString("\n注意：这是定时任务，用户不在电脑前。不要调用需要确认的操作（run_command、open）；修改建议会留给用户稍后确认。最后用一两句话总结结果。")
+		b.WriteString("\n注意：这是定时任务，用户不在电脑前。不要调用需要确认的操作（run_command、open、没设为始终允许的外部工具）；修改建议会留给用户稍后确认。最后用一两句话总结结果。")
 	}
 	if m := strings.TrimSpace(a.agentMemory(me)); m != "" {
 		b.WriteString("\n\n用户让你记住的信息（长期记忆）：\n" + m)
 	}
+	b.WriteString(a.extPromptSection(me))
 	skills := a.skillsFor(me)
 	if len(skills) > 0 {
 		b.WriteString("\n\n可用技能（需要时用 use_skill 读取详细步骤）：")

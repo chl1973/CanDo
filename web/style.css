@@ -394,6 +394,8 @@ textarea.code{font-family:ui-monospace,Consolas,"Courier New",monospace;font-siz
 .folder{flex-wrap:nowrap}
 .folder code{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
 .folder{padding:4px 0;border-bottom:1px dashed var(--line)}
+.extsvc{margin-bottom:8px}
+.extsvc code.muted{font-size:12px}
 @media (max-width:900px){.agent{grid-template-columns:1fr}}
 /* AI 读文献 */
 .rd h4{margin:14px 0 6px}

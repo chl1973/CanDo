@@ -237,6 +237,8 @@ func (a *App) apiMux() *http.ServeMux {
 	m.HandleFunc("POST /api/agent/tasks", a.auth(a.localOnly(a.hAgentTasks)))                                 // 新建或修改定时任务
 	m.HandleFunc("DELETE /api/agent/tasks", a.auth(a.localOnly(a.hAgentTasks)))                               // 删除定时任务（?id=）
 	m.HandleFunc("POST /api/agent/tasks/{id}/run", a.auth(a.localOnly(a.hAgentTaskRun)))                      // 立即运行定时任务
+	m.HandleFunc("GET /api/agent/extools", a.auth(a.localOnly(a.hAgentExt)))                                  // 外部工具服务：已接入的服务、连接状态和发现的工具（?refresh=1 重新检查）
+	m.HandleFunc("PUT /api/agent/extools", a.auth(a.localOnly(a.hAgentExt)))                                  // 保存接入的外部工具服务（只能是本机地址）
 
 	m.HandleFunc("GET /api/templates", a.auth(a.hListTemplates))           // 流程模板列表
 	m.HandleFunc("POST /api/templates", a.auth(a.hCreateTemplate))         // 把项目流程另存为模板

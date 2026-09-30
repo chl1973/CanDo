@@ -23,7 +23,7 @@
 
 <!-- 接口表开始：以下由 go test 自动生成，不要手改 -->
 
-共 158 个接口（GET 59，POST 70，PUT 9，PATCH 6，DELETE 14）。
+共 160 个接口（GET 60，POST 70，PUT 10，PATCH 6，DELETE 14）。
 
 ## 账号、设置与系统
 
@@ -277,5 +277,7 @@
 | POST | `/api/agent/tasks` | 新建或修改定时任务 | 登录、仅本机 | JSON：`id` string、`owner_id` int、`name` string、`prompt` string、`project_id` string、`kind` string、`time` string、`weekday` int、`every` int、`once_at` time.Time、`enabled` bool、`next_run` time.Time、`last_run` time.Time、`runs` []TaskRun、`created_at` time.Time | JSON | `agent2.go` hAgentTasks |
 | DELETE | `/api/agent/tasks` | 删除定时任务（?id=） | 登录、仅本机 | 查询：`id` | JSON | `agent2.go` hAgentTasks |
 | POST | `/api/agent/tasks/{id}/run` | 立即运行定时任务 | 登录、仅本机 | — | JSON | `agent2.go` hAgentTaskRun |
+| GET | `/api/agent/extools` | 外部工具服务：已接入的服务、连接状态和发现的工具（?refresh=1 重新检查） | 登录、仅本机 | 查询：`refresh` | JSON | `extools.go` hAgentExt |
+| PUT | `/api/agent/extools` | 保存接入的外部工具服务（只能是本机地址） | 登录、仅本机 | 查询：`refresh`<br>JSON：`services` []ExtService | JSON | `extools.go` hAgentExt |
 
 <!-- 接口表结束 -->

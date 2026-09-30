@@ -29,6 +29,7 @@ type User struct {
 	WebSearchProvider string        `json:"web_search_provider,omitempty"`
 	AgentMemory       string        `json:"agent_memory,omitempty"`
 	AgentPolicy       *AgentPolicy  `json:"agent_policy,omitempty"`
+	AgentExt          []ExtService  `json:"agent_ext,omitempty"` // 接入的外部工具服务（extools.go）
 	Disabled          bool          `json:"disabled"`
 	CreatedAt         time.Time     `json:"created_at"`
 }
