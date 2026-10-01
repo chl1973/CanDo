@@ -23,7 +23,7 @@
 
 <!-- 接口表开始：以下由 go test 自动生成，不要手改 -->
 
-共 160 个接口（GET 60，POST 70，PUT 10，PATCH 6，DELETE 14）。
+共 168 个接口（GET 63，POST 73，PUT 11，PATCH 6，DELETE 15）。
 
 ## 账号、设置与系统
 
@@ -188,6 +188,14 @@
 | POST | `/api/writing/confirm` | 导出前人工确认 | 登录 | JSON：`id` string、`checks` map[string]bool | JSON | `drift.go` hWritingConfirm |
 | GET | `/api/writing/draft.docx` | 把草稿导出为 Word | 登录 | 查询：`id` | 文件 | `writing_ai.go` hWritingDraftDocx |
 | GET | `/api/writing/draft.txt` | 草稿的纯文本（标题、段落、参考文献，复制用） | 登录 | 查询：`id` | JSON | `writing_ai.go` hWritingDraftText |
+| GET | `/api/writing/full` | 全文列表；带 ?id= 时读取一篇（各节、可选草稿、规则检查、预览） | 登录 | 查询：`id` | JSON | `fullpaper.go` hFullPapers |
+| POST | `/api/writing/full` | 新建全文（按论文类型或论文契约，自动选上各节草稿） | 登录 | 查询：`id`<br>JSON：`profile` string、`lang` string、`title` string、`contract_id` string | JSON | `fullpaper.go` hFullPapers |
+| DELETE | `/api/writing/full` | 删除全文（?id=） | 登录 | 查询：`id` | JSON | `fullpaper.go` hFullPapers |
+| PUT | `/api/writing/full/{id}` | 保存全文的题目、关键词和各节选用的草稿 | 登录 | JSON：`title` string、`keywords` []string、`parts` []WPart | JSON | `fullpaper.go` hFullPaperUpdate |
+| POST | `/api/writing/full/{id}/confirm` | 全文导出前确认 | 登录 | JSON：`checks` map[string]bool | JSON | `fullpaper.go` hFullPaperConfirm |
+| GET | `/api/writing/full/{id}/docx` | 导出全文 Word（须无错误并已确认） | 登录 | — | 文件 | `fullpaper.go` hFullPaperDocx |
+| GET | `/api/writing/full/{id}/tex` | 导出全文 LaTeX（须无错误并已确认） | 登录 | — | 文件 | `fullpaper.go` hFullPaperTex |
+| POST | `/api/writing/full/pdf` | 用本机 LaTeX 把全文编译成 PDF（仅本机） | 登录、仅本机、可后台运行 | JSON：`id` string | JSON | `fullpaper.go` hFullPaperPDF |
 
 ## 论文契约
 

@@ -506,6 +506,19 @@ a.cite{display:inline-block;padding:0 6px;border-radius:6px;background:var(--pri
 .dftext.en p{text-indent:0}
 .dfs.flag{background:var(--hl)}
 .dfs.gap{background:var(--hl2)}
+/* 全文组装 */
+.fpmeta .f{margin-top:8px}
+.fprows{border-top:1px solid var(--line)}
+.fprow{display:grid;grid-template-columns:minmax(140px,1fr) 2fr;gap:12px;padding:10px 0;border-bottom:1px dashed var(--line)}
+.fpwhat{font-size:12.5px;line-height:1.5;margin-top:2px}
+.fppick select{width:100%}
+.fptags{margin-top:6px;gap:6px;flex-wrap:wrap}
+.fpexport{margin-top:14px;gap:8px;flex-wrap:wrap}
+.fpprev{margin-top:10px}
+.fpdoc{border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin-top:8px;background:var(--field)}
+.fpdoc h4{margin:14px 0 6px}
+.fpcite{font-size:11px;color:var(--pri)}
+@media (max-width:700px){.fprow{grid-template-columns:1fr;gap:6px}}
 
 /* v1.10：后台任务 */
 #jobsBtn{display:inline-flex;align-items:center;gap:6px;margin-right:8px}

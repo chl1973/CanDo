@@ -265,51 +265,59 @@ func (a *App) apiMux() *http.ServeMux {
 	m.HandleFunc("GET /api/library", a.auth(a.hLibrary))          // 经验库（已归档并共享的项目）
 	m.HandleFunc("GET /api/library/{id}", a.auth(a.hLibraryItem)) // 经验库中的一个项目
 
-	m.HandleFunc("GET /api/materials", a.auth(a.hListMaterials))                              // 资料列表（项目 / 个人 / 全组共享）
-	m.HandleFunc("POST /api/materials", a.auth(a.hUpload))                                    // 上传资料
-	m.HandleFunc("GET /api/materials/{id}", a.auth(a.hGetMaterial))                           // 资料详情
-	m.HandleFunc("PATCH /api/materials/{id}", a.auth(a.hPatchMaterial))                       // 修改资料信息、共享到全组
-	m.HandleFunc("DELETE /api/materials/{id}", a.auth(a.hDeleteMaterial))                     // 删除资料
-	m.HandleFunc("GET /api/materials/{id}/chunks", a.auth(a.hMaterialChunks))                 // 资料的全部片段
-	m.HandleFunc("GET /api/materials/{id}/file", a.auth(a.hMaterialFile))                     // 下载资料原文件
-	m.HandleFunc("POST /api/ocr/page", a.auth(a.hOCRPage))                                    // 识别扫描件一页的文字
-	m.HandleFunc("GET /api/writing/profiles", a.auth(a.hWritingProfiles))                     // 论文类型（结构、写法、自查清单）
-	m.HandleFunc("POST /api/writing/outline", a.auth(a.bg("AI 列提纲", a.hWritingOutline)))      // AI 带列提纲（不代写）
-	m.HandleFunc("GET /api/writing/template", a.auth(a.hWritingTemplate))                     // 下载论文模板（Word / LaTeX）
-	m.HandleFunc("POST /api/writing/check", a.auth(a.bg("格式检查", a.hWritingCheck)))            // 格式检查
-	m.HandleFunc("GET /api/jobs", a.auth(a.hJobs))                                            // 我的后台任务
-	m.HandleFunc("GET /api/jobs/{id}", a.auth(a.hJob))                                        // 查询一个后台任务（完成后带结果）
-	m.HandleFunc("DELETE /api/jobs/{id}", a.auth(a.hJobDelete))                               // 移除后台任务
-	m.HandleFunc("POST /api/writing/plan", a.auth(a.bg("生成论证骨架", a.hWritingPlan)))            // 生成论证骨架
-	m.HandleFunc("POST /api/writing/draft", a.auth(a.bg("AI 起草", a.hWritingDraft)))           // AI 起草
-	m.HandleFunc("GET /api/writing/drafts", a.auth(a.hWritingDrafts))                         // 草稿列表；带 ?id= 时读取一份
-	m.HandleFunc("DELETE /api/writing/drafts", a.auth(a.hWritingDrafts))                      // 删除草稿（?id=）
-	m.HandleFunc("POST /api/contracts/plan", a.auth(a.bg("生成论文契约", a.hContractPlan)))         // 生成论文契约
-	m.HandleFunc("GET /api/contracts", a.auth(a.hContracts))                                  // 契约列表；带 ?id= 时读取一份
-	m.HandleFunc("DELETE /api/contracts", a.auth(a.hContracts))                               // 删除契约（?id=）
-	m.HandleFunc("GET /api/contracts.md", a.auth(a.hContractMarkdown))                        // 导出契约文档（Markdown）
-	m.HandleFunc("PUT /api/contracts/{id}", a.auth(a.hContractUpdate))                        // 修改契约
-	m.HandleFunc("POST /api/contracts/{id}/attack", a.auth(a.bg("审稿人攻击", a.hContractAttack))) // 审稿人攻击（提出质疑）
-	m.HandleFunc("POST /api/contracts/{id}/rebut", a.auth(a.bg("判定回应", a.hContractRebut)))    // 回应质疑（服务端判定是否让步）
-	m.HandleFunc("POST /api/contracts/{id}/resolve", a.auth(a.hContractResolve))              // 把质疑写进局限、保留为待解决或撤销
-	m.HandleFunc("POST /api/contracts/{id}/confirm", a.auth(a.hContractConfirm))              // 确认契约（确认后锁定）
-	m.HandleFunc("POST /api/contracts/{id}/unlock", a.auth(a.hContractUnlock))                // 解锁契约
-	m.HandleFunc("GET /api/contracts/reviewers", a.auth(a.hContractReviewers))                // 可以请来审阅的老师
-	m.HandleFunc("POST /api/contracts/{id}/review-request", a.auth(a.hContractReviewRequest)) // 请老师审阅契约
-	m.HandleFunc("POST /api/contracts/{id}/review", a.auth(a.hContractReview))                // 老师审阅契约（通过 / 退回 / 评论）
-	m.HandleFunc("GET /api/websearch/status", a.auth(a.hWebSearchStatus))                     // 联网搜索的密钥状态
-	m.HandleFunc("PUT /api/websearch/key", a.auth(a.hWebSearchKey))                           // 保存联网搜索密钥（博查 / Tavily）
-	m.HandleFunc("POST /api/writing/drift", a.auth(a.bg("偏离检查", a.hWritingDrift)))            // 对照契约检查草稿（偏离检查）
-	m.HandleFunc("POST /api/writing/confirm", a.auth(a.hWritingConfirm))                      // 导出前人工确认
-	m.HandleFunc("GET /api/writing/draft.docx", a.auth(a.hWritingDraftDocx))                  // 把草稿导出为 Word
-	m.HandleFunc("GET /api/writing/draft.txt", a.auth(a.hWritingDraftText))                   // 草稿的纯文本（标题、段落、参考文献，复制用）
-	m.HandleFunc("GET /api/research", a.auth(a.hResearchList))                                // 深度调研列表
-	m.HandleFunc("POST /api/research", a.auth(a.hResearchStart))                              // 开始深度调研
-	m.HandleFunc("GET /api/research/{id}", a.auth(a.hResearchGet))                            // 调研进度和报告
-	m.HandleFunc("POST /api/research/{id}/stop", a.auth(a.hResearchStop))                     // 停止调研
-	m.HandleFunc("DELETE /api/research/{id}", a.auth(a.hResearchDelete))                      // 删除调研
-	m.HandleFunc("POST /api/materials/{id}/ocr", a.auth(a.hOCRSave))                          // 保存 OCR 识别出的页
-	m.HandleFunc("GET /api/chunks/{id}", a.auth(a.hGetChunk))                                 // 读取一个片段（点开引用时用）
+	m.HandleFunc("GET /api/materials", a.auth(a.hListMaterials))                                   // 资料列表（项目 / 个人 / 全组共享）
+	m.HandleFunc("POST /api/materials", a.auth(a.hUpload))                                         // 上传资料
+	m.HandleFunc("GET /api/materials/{id}", a.auth(a.hGetMaterial))                                // 资料详情
+	m.HandleFunc("PATCH /api/materials/{id}", a.auth(a.hPatchMaterial))                            // 修改资料信息、共享到全组
+	m.HandleFunc("DELETE /api/materials/{id}", a.auth(a.hDeleteMaterial))                          // 删除资料
+	m.HandleFunc("GET /api/materials/{id}/chunks", a.auth(a.hMaterialChunks))                      // 资料的全部片段
+	m.HandleFunc("GET /api/materials/{id}/file", a.auth(a.hMaterialFile))                          // 下载资料原文件
+	m.HandleFunc("POST /api/ocr/page", a.auth(a.hOCRPage))                                         // 识别扫描件一页的文字
+	m.HandleFunc("GET /api/writing/profiles", a.auth(a.hWritingProfiles))                          // 论文类型（结构、写法、自查清单）
+	m.HandleFunc("POST /api/writing/outline", a.auth(a.bg("AI 列提纲", a.hWritingOutline)))           // AI 带列提纲（不代写）
+	m.HandleFunc("GET /api/writing/template", a.auth(a.hWritingTemplate))                          // 下载论文模板（Word / LaTeX）
+	m.HandleFunc("POST /api/writing/check", a.auth(a.bg("格式检查", a.hWritingCheck)))                 // 格式检查
+	m.HandleFunc("GET /api/jobs", a.auth(a.hJobs))                                                 // 我的后台任务
+	m.HandleFunc("GET /api/jobs/{id}", a.auth(a.hJob))                                             // 查询一个后台任务（完成后带结果）
+	m.HandleFunc("DELETE /api/jobs/{id}", a.auth(a.hJobDelete))                                    // 移除后台任务
+	m.HandleFunc("POST /api/writing/plan", a.auth(a.bg("生成论证骨架", a.hWritingPlan)))                 // 生成论证骨架
+	m.HandleFunc("POST /api/writing/draft", a.auth(a.bg("AI 起草", a.hWritingDraft)))                // AI 起草
+	m.HandleFunc("GET /api/writing/drafts", a.auth(a.hWritingDrafts))                              // 草稿列表；带 ?id= 时读取一份
+	m.HandleFunc("DELETE /api/writing/drafts", a.auth(a.hWritingDrafts))                           // 删除草稿（?id=）
+	m.HandleFunc("POST /api/contracts/plan", a.auth(a.bg("生成论文契约", a.hContractPlan)))              // 生成论文契约
+	m.HandleFunc("GET /api/contracts", a.auth(a.hContracts))                                       // 契约列表；带 ?id= 时读取一份
+	m.HandleFunc("DELETE /api/contracts", a.auth(a.hContracts))                                    // 删除契约（?id=）
+	m.HandleFunc("GET /api/contracts.md", a.auth(a.hContractMarkdown))                             // 导出契约文档（Markdown）
+	m.HandleFunc("PUT /api/contracts/{id}", a.auth(a.hContractUpdate))                             // 修改契约
+	m.HandleFunc("POST /api/contracts/{id}/attack", a.auth(a.bg("审稿人攻击", a.hContractAttack)))      // 审稿人攻击（提出质疑）
+	m.HandleFunc("POST /api/contracts/{id}/rebut", a.auth(a.bg("判定回应", a.hContractRebut)))         // 回应质疑（服务端判定是否让步）
+	m.HandleFunc("POST /api/contracts/{id}/resolve", a.auth(a.hContractResolve))                   // 把质疑写进局限、保留为待解决或撤销
+	m.HandleFunc("POST /api/contracts/{id}/confirm", a.auth(a.hContractConfirm))                   // 确认契约（确认后锁定）
+	m.HandleFunc("POST /api/contracts/{id}/unlock", a.auth(a.hContractUnlock))                     // 解锁契约
+	m.HandleFunc("GET /api/contracts/reviewers", a.auth(a.hContractReviewers))                     // 可以请来审阅的老师
+	m.HandleFunc("POST /api/contracts/{id}/review-request", a.auth(a.hContractReviewRequest))      // 请老师审阅契约
+	m.HandleFunc("POST /api/contracts/{id}/review", a.auth(a.hContractReview))                     // 老师审阅契约（通过 / 退回 / 评论）
+	m.HandleFunc("GET /api/websearch/status", a.auth(a.hWebSearchStatus))                          // 联网搜索的密钥状态
+	m.HandleFunc("PUT /api/websearch/key", a.auth(a.hWebSearchKey))                                // 保存联网搜索密钥（博查 / Tavily）
+	m.HandleFunc("POST /api/writing/drift", a.auth(a.bg("偏离检查", a.hWritingDrift)))                 // 对照契约检查草稿（偏离检查）
+	m.HandleFunc("POST /api/writing/confirm", a.auth(a.hWritingConfirm))                           // 导出前人工确认
+	m.HandleFunc("GET /api/writing/draft.docx", a.auth(a.hWritingDraftDocx))                       // 把草稿导出为 Word
+	m.HandleFunc("GET /api/writing/draft.txt", a.auth(a.hWritingDraftText))                        // 草稿的纯文本（标题、段落、参考文献，复制用）
+	m.HandleFunc("GET /api/writing/full", a.auth(a.hFullPapers))                                   // 全文列表；带 ?id= 时读取一篇（各节、可选草稿、规则检查、预览）
+	m.HandleFunc("POST /api/writing/full", a.auth(a.hFullPapers))                                  // 新建全文（按论文类型或论文契约，自动选上各节草稿）
+	m.HandleFunc("DELETE /api/writing/full", a.auth(a.hFullPapers))                                // 删除全文（?id=）
+	m.HandleFunc("PUT /api/writing/full/{id}", a.auth(a.hFullPaperUpdate))                         // 保存全文的题目、关键词和各节选用的草稿
+	m.HandleFunc("POST /api/writing/full/{id}/confirm", a.auth(a.hFullPaperConfirm))               // 全文导出前确认
+	m.HandleFunc("GET /api/writing/full/{id}/docx", a.auth(a.hFullPaperDocx))                      // 导出全文 Word（须无错误并已确认）
+	m.HandleFunc("GET /api/writing/full/{id}/tex", a.auth(a.hFullPaperTex))                        // 导出全文 LaTeX（须无错误并已确认）
+	m.HandleFunc("POST /api/writing/full/pdf", a.auth(a.localOnly(a.bg("编译全文", a.hFullPaperPDF)))) // 用本机 LaTeX 把全文编译成 PDF（仅本机）
+	m.HandleFunc("GET /api/research", a.auth(a.hResearchList))                                     // 深度调研列表
+	m.HandleFunc("POST /api/research", a.auth(a.hResearchStart))                                   // 开始深度调研
+	m.HandleFunc("GET /api/research/{id}", a.auth(a.hResearchGet))                                 // 调研进度和报告
+	m.HandleFunc("POST /api/research/{id}/stop", a.auth(a.hResearchStop))                          // 停止调研
+	m.HandleFunc("DELETE /api/research/{id}", a.auth(a.hResearchDelete))                           // 删除调研
+	m.HandleFunc("POST /api/materials/{id}/ocr", a.auth(a.hOCRSave))                               // 保存 OCR 识别出的页
+	m.HandleFunc("GET /api/chunks/{id}", a.auth(a.hGetChunk))                                      // 读取一个片段（点开引用时用）
 
 	m.HandleFunc("POST /api/ask", a.auth(a.bg("资料问答", a.hAsk)))         // 资料问答
 	m.HandleFunc("POST /api/compare", a.auth(a.bg("资料对比", a.hCompare))) // 资料对比

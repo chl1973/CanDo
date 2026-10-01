@@ -18,7 +18,7 @@ tools/e2e/run.sh                                   # 浏览器端到端测试（
 - 端到端测试依赖 Python3 + `pip install playwright` + `python -m playwright install chromium`。`-tags e2e` 构建会打开 `e2e_hooks.go` 里的测试开关（模拟 OpenAlex 等），正式版不要带这个标签。
 
 ## 代码结构
-- 后端：`app.go`（路由、CSP、静态文件）、`store.go`（JSON 存储，`Store.Update/View` 事务）、`auth.go`、`api_*.go`、功能文件（`contract.go` 论文契约（反谄媚让步门槛在服务端强制）、`writing_ai.go` AI 起草、`jobs.go` 后台任务、`home.go` 首页、`research.go` 深度调研、`ocr.go`、`agent2.go` 本机智能体、`office.go` / `agent_office.go` Word·Excel·PPT 读写（改 Word 只动 `word/document.xml` 里的正文段落，其余部件原样复制）、`extools.go` 外部工具服务（合作者用 Python 等写的本机工具，约定见 `docs/外部工具接口.md`，示例 `tools/extool/example_server.py`；智能体循环、提示、文件读写和确认都留在 CanDo 这边）、`websearch.go` 联网搜索（博查 / Tavily）、`tectonic.go` 便携 LaTeX、`drift.go` 偏离检查与导出前确认……）。每个功能都有 `*_test.go`。
+- 后端：`app.go`（路由、CSP、静态文件）、`store.go`（JSON 存储，`Store.Update/View` 事务）、`auth.go`、`api_*.go`、功能文件（`contract.go` 论文契约（反谄媚让步门槛在服务端强制）、`writing_ai.go` AI 起草、`jobs.go` 后台任务、`home.go` 首页、`research.go` 深度调研、`ocr.go`、`agent2.go` 本机智能体、`office.go` / `agent_office.go` Word·Excel·PPT 读写（改 Word 只动 `word/document.xml` 里的正文段落，其余部件原样复制）、`extools.go` 外部工具服务（合作者用 Python 等写的本机工具，约定见 `docs/外部工具接口.md`，示例 `tools/extool/example_server.py`；智能体循环、提示、文件读写和确认都留在 CanDo 这边）、`websearch.go` 联网搜索（博查 / Tavily）、`tectonic.go` 便携 LaTeX、`drift.go` 偏离检查与导出前确认、`fullpaper.go` 全文组装（各节草稿拼成全文，不调用模型；规则检查 + 作者确认后导出 Word / LaTeX / PDF）……）。每个功能都有 `*_test.go`。
 - 前端：`web/`（原生 ES 模块，无构建步骤，`go:embed` 打包进程序）。`core.js` 公共函数；`app.js` 路由和主要页面；其余按功能分文件。
 - 品牌：`brand/`（图标 SVG 母版、`render.py` 生成全套 PNG/ico、`README.md` 色系规范）。
 

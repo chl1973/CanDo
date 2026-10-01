@@ -227,6 +227,7 @@ type DB struct {
 	ResearchJobs  []*ResearchJob   `json:"research_jobs,omitempty"`
 	Drafts        []*WDraft        `json:"drafts,omitempty"`
 	Contracts     []*PaperContract `json:"contracts,omitempty"`
+	Papers        []*WPaper        `json:"papers,omitempty"` // 全文组装（fullpaper.go）
 	AgentTasks    []*AgentTask     `json:"agent_tasks,omitempty"`
 	Settings      Settings         `json:"settings"`
 	NextUserID    int              `json:"next_user_id"`
