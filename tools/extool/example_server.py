@@ -4,7 +4,7 @@
     python example_server.py            # 默认监听 http://127.0.0.1:8765
     python example_server.py --port 9000
 
-然后在 CanDo 可为「AI 助手 → 本机智能体 → 文件夹与权限 → 外部工具服务」里接入：
+然后在 CanDo 可为「AI 助手 → 能力中心」里点“接入工具服务”：
     短名 fig，地址 http://127.0.0.1:8765
 
 怎么加自己的工具：写一个函数，在上面加 @tool(...)，重启服务。CanDo 那边自动发现，不用改任何东西。
@@ -59,7 +59,7 @@ class Result:
 _TOOLS = {}
 
 
-def tool(name, title, description="", params=None, required=None, makes_files=False, timeout=60):
+def tool(name, title, description="", params=None, required=None, makes_files=False, timeout=60, example=""):
     """把函数登记成工具。name 只能用小写字母、数字、下划线。"""
     assert re.fullmatch(r"[a-z][a-z0-9_]{0,39}", name), "工具名不合规：" + name
 
@@ -70,6 +70,7 @@ def tool(name, title, description="", params=None, required=None, makes_files=Fa
                 "name": name,
                 "title": title,
                 "description": description,
+                "example": example,  # 给用户看的一句示例，显示在 CanDo 的“能力中心”里，点“用它”会填进输入框
                 "params": {"type": "object", "properties": params or {}, "required": required or []},
                 "makes_files": makes_files,
                 "timeout": timeout,
@@ -161,6 +162,7 @@ def serve(port=8765):
     },
     required=["values"],
     makes_files=True,
+    example="把 3、5、2 画成柱状图，三根柱子叫甲、乙、丙，标题“三组对比”",
 )
 def bar_chart(values, labels=None, title="", filename="chart.svg"):
     try:
@@ -195,6 +197,7 @@ def bar_chart(values, labels=None, title="", filename="chart.svg"):
     "列出 .tex 文件的章节结构、图表和引用数量",
     params={"tex": {"type": "string", "format": "cando-file", "description": ".tex 文件"}},
     required=["tex"],
+    example="列出 main.tex 的章节结构，看看有几个图、几个表",
 )
 def tex_outline(tex: InFile):
     src = tex.text()
@@ -222,6 +225,7 @@ def tex_outline(tex: InFile):
         "label": {"type": "string", "description": "引用标签，例如 fig:chart"},
     },
     required=["tex", "image", "caption", "after_line"],
+    example="在 main.tex 的“实验结果”一节后面插入 chart.svg，图题“三组对比”",
 )
 def tex_insert_figure(tex: InFile, image, caption, after_line, label=""):
     lines = tex.text().split("\n")

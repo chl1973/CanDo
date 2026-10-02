@@ -70,6 +70,7 @@ type extTool struct {
 	Name        string
 	Title       string
 	Description string
+	Example     string // 给用户看的一句示例（能力中心里“用它”时填进输入框），可以不给
 	Params      []extParam
 	MakesFiles  bool
 	Timeout     int
@@ -238,6 +239,7 @@ func parseExtManifest(body []byte) (*extManifest, error) {
 			Name        string         `json:"name"`
 			Title       string         `json:"title"`
 			Description string         `json:"description"`
+			Example     string         `json:"example"`
 			Params      map[string]any `json:"params"`
 			MakesFiles  bool           `json:"makes_files"`
 			Timeout     int            `json:"timeout"`
@@ -259,7 +261,7 @@ func parseExtManifest(body []byte) (*extManifest, error) {
 			continue // 名字不合规或重复的工具直接忽略
 		}
 		seen[t.Name] = true
-		et := extTool{Name: t.Name, Title: oneLine(clipRunes(t.Title, 30)), Description: oneLine(clipRunes(t.Description, 300)), MakesFiles: t.MakesFiles, Timeout: t.Timeout}
+		et := extTool{Name: t.Name, Title: oneLine(clipRunes(t.Title, 30)), Description: oneLine(clipRunes(t.Description, 300)), Example: oneLine(clipRunes(t.Example, 120)), MakesFiles: t.MakesFiles, Timeout: t.Timeout}
 		if et.Title == "" {
 			et.Title = t.Name
 		}
@@ -685,7 +687,12 @@ func (a *App) extView(me *Me, fresh bool) []map[string]any {
 		v["version"] = m.Version
 		tools := []map[string]any{}
 		for _, t := range m.Tools {
-			tools = append(tools, map[string]any{"name": t.Name, "full": "ext." + svc.Name + "." + t.Name, "title": t.Title, "description": t.Description, "always": containsStr(svc.Allow, t.Name)})
+			params := []map[string]any{}
+			for _, p := range t.Params {
+				params = append(params, map[string]any{"name": p.Name, "desc": p.Desc, "required": p.Required, "file": p.File})
+			}
+			tools = append(tools, map[string]any{"name": t.Name, "full": "ext." + svc.Name + "." + t.Name, "title": t.Title, "description": t.Description, "always": containsStr(svc.Allow, t.Name),
+				"example": t.Example, "makes_files": t.MakesFiles, "params": params})
 		}
 		v["tools"] = tools
 		out = append(out, v)

@@ -15,7 +15,7 @@ import (
 //go:embed web
 var webFS embed.FS
 
-const AppVersion = "1.15.0"
+const AppVersion = "1.16.0"
 
 type App struct {
 	store        *Store
@@ -239,6 +239,8 @@ func (a *App) apiMux() *http.ServeMux {
 	m.HandleFunc("POST /api/agent/tasks/{id}/run", a.auth(a.localOnly(a.hAgentTaskRun)))                      // 立即运行定时任务
 	m.HandleFunc("GET /api/agent/extools", a.auth(a.localOnly(a.hAgentExt)))                                  // 外部工具服务：已接入的服务、连接状态和发现的工具（?refresh=1 重新检查）
 	m.HandleFunc("PUT /api/agent/extools", a.auth(a.localOnly(a.hAgentExt)))                                  // 保存接入的外部工具服务（只能是本机地址）
+	m.HandleFunc("GET /api/agent/capabilities", a.auth(a.hAgentCapabilities))                                 // 能力中心：内置能力（是否可用、还缺什么、示例）和已接入的外部工具（?refresh=1 重新检查）
+	m.HandleFunc("GET /api/agent/extools/kit", a.auth(a.hAgentExtKit))                                        // 下载给合作者的外部工具开发包（接口约定 + Python 示例，zip）
 
 	m.HandleFunc("GET /api/templates", a.auth(a.hListTemplates))           // 流程模板列表
 	m.HandleFunc("POST /api/templates", a.auth(a.hCreateTemplate))         // 把项目流程另存为模板

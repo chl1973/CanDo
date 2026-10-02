@@ -21,4 +21,4 @@ echo "== 主流程（首次设置、首页、论文库、AI 起草、深色模�
 echo "== 后台任务"; python3 e2e_jobs.py http://127.0.0.1:18817
 echo "== 论文契约"; python3 e2e_contract.py http://127.0.0.1:18824
 echo "== 本机智能体 × Office"; python3 e2e_office.py http://127.0.0.1:18825
-echo "== 外部工具服务"; python3 e2e_extools.py http://127.0.0.1:18826 http://127.0.0.1:18765
+echo "== 能力中心与外部工具服务"; python3 e2e_extools.py http://127.0.0.1:18826 http://127.0.0.1:18765

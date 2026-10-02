@@ -3,7 +3,7 @@
 set -euo pipefail
 export LANG=C.UTF-8 LC_ALL=C.UTF-8
 cd "$(dirname "$0")"
-VERSION=1.15.0
+VERSION=1.16.0
 mkdir -p dist
 echo "== 测试"
 go vet ./...

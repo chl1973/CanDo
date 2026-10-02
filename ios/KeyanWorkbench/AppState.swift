@@ -4,7 +4,7 @@ import SwiftUI
 /// CanDo iOS App：连接老师电脑上运行的“CanDo 可为”，在 App 内使用全部功能。
 /// 数据全部保存在老师电脑上，手机只保存“电脑地址”和登录状态（WebView 的 Cookie）。
 enum AppInfo {
-    static let version = "1.15.0"
+    static let version = "1.16.0"
     static let defaultPort = 18765
 }
 

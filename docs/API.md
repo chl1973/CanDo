@@ -23,7 +23,7 @@
 
 <!-- 接口表开始：以下由 go test 自动生成，不要手改 -->
 
-共 168 个接口（GET 63，POST 73，PUT 11，PATCH 6，DELETE 15）。
+共 170 个接口（GET 65，POST 73，PUT 11，PATCH 6，DELETE 15）。
 
 ## 账号、设置与系统
 
@@ -287,5 +287,7 @@
 | POST | `/api/agent/tasks/{id}/run` | 立即运行定时任务 | 登录、仅本机 | — | JSON | `agent2.go` hAgentTaskRun |
 | GET | `/api/agent/extools` | 外部工具服务：已接入的服务、连接状态和发现的工具（?refresh=1 重新检查） | 登录、仅本机 | 查询：`refresh` | JSON | `extools.go` hAgentExt |
 | PUT | `/api/agent/extools` | 保存接入的外部工具服务（只能是本机地址） | 登录、仅本机 | 查询：`refresh`<br>JSON：`services` []ExtService | JSON | `extools.go` hAgentExt |
+| GET | `/api/agent/capabilities` | 能力中心：内置能力（是否可用、还缺什么、示例）和已接入的外部工具（?refresh=1 重新检查） | 登录 | 查询：`refresh` | JSON | `capabilities.go` hAgentCapabilities |
+| GET | `/api/agent/extools/kit` | 下载给合作者的外部工具开发包（接口约定 + Python 示例，zip） | 登录 | — | 文件 | `capabilities.go` hAgentExtKit |
 
 <!-- 接口表结束 -->

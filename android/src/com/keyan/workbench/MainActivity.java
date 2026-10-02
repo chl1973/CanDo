@@ -50,7 +50,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MainActivity extends Activity {
-    static final String VERSION = "1.15.0";
+    static final String VERSION = "1.16.0";
     static final int DEFAULT_PORT = 18765;
     static final int REQ_FILE = 1;
     static final int REQ_STORAGE = 2;

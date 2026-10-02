@@ -9,7 +9,7 @@ SetCompressor /SOLID lzma
 !define OLDNAME "科研竞赛工作台"
 !define APPID "KeyanWorkbench"
 !ifndef VERSION
-  !define VERSION "1.15.0"
+  !define VERSION "1.16.0"
 !endif
 !define UNINSTKEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPID}"
 
@@ -20,7 +20,7 @@ InstallDirRegKey HKLM "${UNINSTKEY}" "InstallLocation"
 RequestExecutionLevel admin
 BrandingText "${APPNAME} v${VERSION}"
 
-VIProductVersion "1.15.0.0"
+VIProductVersion "1.16.0.0"
 VIAddVersionKey /LANG=2052 "ProductName" "${APPNAME}"
 VIAddVersionKey /LANG=2052 "FileDescription" "${APPNAME} 安装程序"
 VIAddVersionKey /LANG=2052 "FileVersion" "${VERSION}"
