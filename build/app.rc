@@ -1,8 +1,8 @@
 1 ICON "app.ico"
 1 24 "app.manifest"
 1 VERSIONINFO
-FILEVERSION 1,14,0,0
-PRODUCTVERSION 1,14,0,0
+FILEVERSION 1,15,0,0
+PRODUCTVERSION 1,15,0,0
 FILEOS 0x40004
 FILETYPE 0x1
 BEGIN
@@ -12,11 +12,11 @@ BEGIN
     BEGIN
       VALUE "CompanyName", "CanDo 可为"
       VALUE "FileDescription", "CanDo 可为"
-      VALUE "FileVersion", "1.14.0"
+      VALUE "FileVersion", "1.15.0"
       VALUE "InternalName", "CanDo"
       VALUE "OriginalFilename", "CanDo.exe"
       VALUE "ProductName", "CanDo 可为"
-      VALUE "ProductVersion", "1.14.0"
+      VALUE "ProductVersion", "1.15.0"
     END
   END
   BLOCK "VarFileInfo"
