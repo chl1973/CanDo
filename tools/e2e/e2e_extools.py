@@ -35,7 +35,7 @@ async def main():
         await pg.screenshot(path=f"{OUT}/approval.png")
         await pg.click("button[data-act=agApprove][data-d=always]")
         await pg.wait_for_selector("#agSideBody .change", timeout=30000)
-        await pg.wait_for_function("!document.querySelector('#agGo').disabled", timeout=30000)
+        await pg.wait_for_function("() => !document.querySelector('#agGo').disabled", timeout=30000)
         print("STEPS:", one(await pg.inner_text("#agSteps"))[-300:])
         chs=await pg.locator("#agSideBody .change").all_inner_texts(); print("CHANGES:", [one(c)[:120] for c in chs])
         print("BEFORE APPLY exists:", os.path.exists(os.path.join(WS,"chart.svg")))
