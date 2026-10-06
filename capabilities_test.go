@@ -166,7 +166,8 @@ func TestExtKit(t *testing.T) {
 		rc.Close()
 		got[f.Name] = string(x)
 	}
-	for name, want := range map[string]string{"CanDo外部工具开发包/先看这里.txt": "能力中心", "CanDo外部工具开发包/外部工具接口.md": "cando-tools/1", "CanDo外部工具开发包/example_server.py": "@tool("} {
+	for name, want := range map[string]string{"CanDo外部工具开发包/先看这里.txt": "能力中心", "CanDo外部工具开发包/外部工具接口.md": "cando-tools/1", "CanDo外部工具开发包/example_server.py": "@tool(",
+		"CanDo外部工具开发包/cando-tools.openapi.json": "\"openapi\": \"3.0.3\"", "CanDo外部工具开发包/check_contract.py": "cando-tools.openapi.json"} {
 		if !strings.Contains(got[name], want) {
 			t.Fatalf("开发包缺少 %s（或内容不对）：%v", name, len(got[name]))
 		}

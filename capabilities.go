@@ -15,7 +15,7 @@ import (
 	"strings"
 )
 
-//go:embed docs/外部工具接口.md tools/extool/example_server.py
+//go:embed docs/外部工具接口.md docs/cando-tools.openapi.json tools/extool/example_server.py tools/extool/check_contract.py
 var extKitFS embed.FS
 
 type capItem struct {
@@ -205,6 +205,8 @@ const extKitReadme = `CanDo 可为 · 外部工具开发包
 里面有什么
   · 外部工具接口.md      接口约定（协议 cando-tools/1）：只有两个地址，GET /tools 和 POST /tools/{name}
   · example_server.py    Python 示例，只用标准库。照着在里面加 @tool 函数就行
+  · cando-tools.openapi.json   同一份约定的机器可读版（OpenAPI 3.0）。给程序和 AI 编程工具看，可以导入 Swagger、Postman 或用来生成代码
+  · check_contract.py    按契约检查你的服务：python check_contract.py http://127.0.0.1:8765
 
 三步跑起来
   1. 运行：python example_server.py        （默认 http://127.0.0.1:8765）
@@ -238,7 +240,8 @@ func (a *App) hAgentExtKit(w http.ResponseWriter, r *http.Request, me *Me) error
 	if err := add("CanDo外部工具开发包/先看这里.txt", []byte(strings.ReplaceAll(extKitReadme, "\n", "\r\n"))); err != nil {
 		return err
 	}
-	for src, dst := range map[string]string{"docs/外部工具接口.md": "外部工具接口.md", "tools/extool/example_server.py": "example_server.py"} {
+	for src, dst := range map[string]string{"docs/外部工具接口.md": "外部工具接口.md", "docs/cando-tools.openapi.json": "cando-tools.openapi.json",
+		"tools/extool/example_server.py": "example_server.py", "tools/extool/check_contract.py": "check_contract.py"} {
 		b, err := extKitFS.ReadFile(src)
 		if err != nil {
 			return err
