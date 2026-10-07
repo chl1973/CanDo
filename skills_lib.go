@@ -5,11 +5,13 @@ package main
 // 其中 academic-research-skills（CC BY-NC 4.0，禁止商用）只借鉴了“提交前诚信闸门”的思路，没有使用其文字。
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
+	"time"
 	"unicode/utf8"
 )
 
@@ -167,6 +169,76 @@ func skillRawURL(u string) (string, error) {
 	return "", errBad("目前只支持从 GitHub 导入")
 }
 
+// ---------------- 下载 SKILL.md：GitHub 连不上时换备用线路 ----------------
+
+type skillSource struct{ URL, Accept string }
+
+var reRawGH = regexp.MustCompile(`^https://raw\.githubusercontent\.com/([^/]+)/([^/]+)/([^/]+)/(.+)$`)
+
+// skillSources 同一个文件的几条下载线路，按顺序试。
+// raw.githubusercontent.com 在国内经常连不上（浏览器能打开 github.com 也不代表它能连上），
+// 所以后面跟着两条 jsDelivr 镜像（内容可能比 GitHub 晚几个小时）和 GitHub 的接口。测试时可以替换。
+var skillSources = func(raw string) []skillSource {
+	out := []skillSource{{URL: raw}}
+	if m := reRawGH.FindStringSubmatch(raw); m != nil {
+		owner, repo, ref, p := m[1], m[2], m[3], m[4]
+		out = append(out,
+			skillSource{URL: "https://cdn.jsdelivr.net/gh/" + owner + "/" + repo + "@" + ref + "/" + p},
+			skillSource{URL: "https://fastly.jsdelivr.net/gh/" + owner + "/" + repo + "@" + ref + "/" + p},
+			skillSource{URL: "https://api.github.com/repos/" + owner + "/" + repo + "/contents/" + p + "?ref=" + url.QueryEscape(ref), Accept: "application/vnd.github.raw+json"},
+		)
+	}
+	return out
+}
+
+var skillTryTimeout = 12 * time.Second // 每条线路最多等多久
+
+const skillManualHint = "可以在浏览器里打开这个技能的 SKILL.md，点右上角的下载按钮存到电脑，再点“导入 SKILL.md 文件”"
+
+// fetchSkillMD 依次试各条线路，返回文件内容（最多 200 KB）。
+func fetchSkillMD(ctx context.Context, raw string) ([]byte, error) {
+	notFound, lastStatus, private := false, 0, false
+	for i, src := range skillSources(raw) {
+		c, cancel := context.WithTimeout(ctx, skillTryTimeout)
+		req, _ := http.NewRequestWithContext(c, "GET", src.URL, nil)
+		req.Header.Set("User-Agent", "KeyanWorkbench/"+AppVersion)
+		if src.Accept != "" {
+			req.Header.Set("Accept", src.Accept)
+		}
+		resp, err := pdfClient.Do(req)
+		if err != nil {
+			cancel()
+			if strings.Contains(err.Error(), "内网") {
+				private = true
+			}
+			continue // 这条线路连不上，换下一条
+		}
+		b, _ := io.ReadAll(io.LimitReader(resp.Body, 200<<10))
+		resp.Body.Close()
+		cancel()
+		switch {
+		case resp.StatusCode == 200:
+			return b, nil
+		case resp.StatusCode == 404 && i == 0:
+			// GitHub 自己说没有这个文件：不用再试镜像
+			return nil, errBad("没有找到 SKILL.md：请确认网址指向一个技能文件夹（里面有 SKILL.md）")
+		case resp.StatusCode == 404:
+			notFound = true
+		default:
+			lastStatus = resp.StatusCode
+		}
+	}
+	switch {
+	case notFound:
+		return nil, errBad("下载失败：GitHub 连不上，备用线路上也没有找到这个文件。请确认网址指向一个技能文件夹（里面有 SKILL.md）；也" + skillManualHint)
+	case lastStatus != 0:
+		return nil, errBad("下载失败（" + itoa(lastStatus) + "）。" + skillManualHint)
+	case private:
+		return nil, errBad("下载失败：这台电脑把 GitHub 的地址解析成了内网地址（常见于 hosts 文件或加速器的设置）。" + skillManualHint)
+	}
+	return nil, errBad("下载失败：连不上 GitHub（国内网络常见，备用线路也试过了）。" + skillManualHint)
+}
+
 var reLicense = regexp.MustCompile(`(?mi)^\s*license\s*:\s*["']?([^"'\n]+)`)
 
 func (a *App) hSkillImport(w http.ResponseWriter, r *http.Request, me *Me) error {
@@ -180,20 +252,10 @@ func (a *App) hSkillImport(w http.ResponseWriter, r *http.Request, me *Me) error
 	if err != nil {
 		return err
 	}
-	req, _ := http.NewRequest("GET", raw, nil)
-	req.Header.Set("User-Agent", "KeyanWorkbench/"+AppVersion)
-	resp, err := pdfClient.Do(req)
+	b, err := fetchSkillMD(r.Context(), raw)
 	if err != nil {
-		return errBad("下载失败：" + shortErr(err))
+		return err
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode == 404 {
-		return errBad("没有找到 SKILL.md：请确认网址指向一个技能文件夹（里面有 SKILL.md）")
-	}
-	if resp.StatusCode != 200 {
-		return errBad("下载失败（" + itoa(resp.StatusCode) + "）")
-	}
-	b, _ := io.ReadAll(io.LimitReader(resp.Body, 200<<10))
 	if !utf8.Valid(b) {
 		return errBad("文件不是文本")
 	}

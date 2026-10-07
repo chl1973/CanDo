@@ -571,16 +571,9 @@ func blockedIP(ip net.IP) bool {
 var pdfClient = &http.Client{
 	Timeout: 90 * time.Second,
 	Transport: &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
+		Proxy: chooseProxy, // 环境变量里的代理 → Windows 系统代理 → 直连（见 sysproxy.go）
 		DialContext: (&net.Dialer{Timeout: 15 * time.Second, Control: func(network, address string, c syscall.RawConn) error {
-			host, _, err := net.SplitHostPort(address)
-			if err != nil {
-				return err
-			}
-			if ip := net.ParseIP(host); ip != nil && blockedIP(ip) && !allowPrivateFetch {
-				return errors.New("禁止访问内网地址")
-			}
-			return nil
+			return dialAllowed(address)
 		}}).DialContext,
 	},
 	CheckRedirect: func(req *http.Request, via []*http.Request) error {
