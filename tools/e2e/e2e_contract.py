@@ -84,6 +84,40 @@ async def main():
             await pg.click("form[data-submit=dfConfirm] button[type=submit]")
         d=await dl.value; path=await d.path()
         print("DOCX DOWNLOADED:", d.suggested_filename, os.path.getsize(path)>2000, "| confirmed note:", "已在" in await pg.inner_text("#dfDraftBox"))
+        # 全文组装：再按契约起草摘要和结论（接口），然后在界面上拼装、检查、确认、导出
+        st,cts=await api(pg,"GET","/api/contracts"); ctid=cts[0]["id"]
+        for sec in ["摘要","结论"]:
+            st,pl=await api(pg,"POST","/api/writing/plan",{"contract_id":ctid,"section":sec,"idea":"","results":"","material_ids":[]})
+            did=pl["draft"]["id"]
+            st,dr=await api(pg,"POST","/api/writing/draft",{"id":did,"claims":pl["draft"]["claims"],"length":""})
+            await api(pg,"POST","/api/writing/drift",{"id":did})
+            st,cf=await api(pg,"POST","/api/writing/confirm",{"id":did,"checks":{"facts":True,"ai":True,"gaps":True,"issues":True}})
+            print("SECTION", sec, st)
+        await pg.click("#wrTabs button[data-t=full]"); await pg.wait_for_selector("form[data-submit=fpNew]")
+        await pg.select_option("form[data-submit=fpNew] select[name=contract]", index=1)
+        await pg.click("form[data-submit=fpNew] button[type=submit]"); await pg.wait_for_selector(".fpcard")
+        picked=await pg.eval_on_selector_all(".fprow select","els=>els.map(e=>e.selectedOptions[0]?e.selectedOptions[0].textContent:'')")
+        print("FULL PICKED:", [x[:12] for x in picked])
+        print("FULL ERRORS BEFORE:", [one(x)[:40] for x in await pg.locator(".fpcard .writem.lv-error").all_inner_texts()], "| export disabled:", await pg.locator("button[data-act=fpDocx][disabled]").count()==1)
+        await pg.fill(".fpmeta input[name=keywords]","短视频；注意力；大学生"); await pg.press(".fpmeta input[name=keywords]","Tab")
+        await pg.wait_for_selector("button[data-act=fpDocx]:not([disabled])", timeout=10000)
+        print("FULL ERRORS AFTER:", await pg.locator(".fpcard .writem.lv-error").count(), "| warns:", await pg.locator(".fpcard .writem.lv-warn").count())
+        await pg.click(".fpprev summary"); await pg.wait_for_timeout(200)
+        print("FULL PREVIEW:", one(await pg.inner_text(".fpdoc"))[:120])
+        await pg.screenshot(path=f"{OUT}/full_paper.png", full_page=True)
+        await pg.click("button[data-act=fpDocx]"); await pg.wait_for_selector("form[data-submit=fpConfirm]")
+        n=await pg.locator("form[data-submit=fpConfirm] input[type=checkbox]").count()
+        for k in range(n): await pg.check(f"form[data-submit=fpConfirm] input[type=checkbox] >> nth={k}")
+        async with pg.expect_download() as dl:
+            await pg.click("form[data-submit=fpConfirm] button[type=submit]")
+        d=await dl.value; path=await d.path()
+        import docx as _docx
+        fd=_docx.Document(path); txt="\n".join(x.text for x in fd.paragraphs)
+        print("FULL DOCX:", d.suggested_filename, "| confirm items", n, "| has 关键词:", "关键词：短视频；注意力；大学生" in txt, "| sections:", sum(1 for h in ["摘要","1 引言","2 结论"] if h in txt), "| AI note:", "AI 辅助起草的全文" in txt)
+        async with pg.expect_download() as dl:
+            await pg.click("button[data-act=fpTex]")
+        d=await dl.value; tex=open(await d.path(),encoding="utf-8").read()
+        print("FULL TEX:", d.suggested_filename, "\\begin{abstract}" in tex, "\\section{引言}" in tex)
         # 请老师审阅：另一位老师查看（只读）并退回
         await api(pg,"POST","/api/users",{"username":"li","name":"李老师","role":"teacher","password":"teach456"})
         await pg.goto(B+"/#/writing/contract"); await pg.wait_for_selector("#ctList a[data-act=ctOpen]")

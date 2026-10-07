@@ -1,0 +1,514 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "CanDo 可为 · 外部工具接口",
+    "version": "1.1.0",
+    "description": "协议 cando-tools/1 的机器可读契约。\n\n角色：外部工具服务是 HTTP 服务端（由合作者实现），CanDo 可为是客户端。本文件描述的是**服务端必须实现的两个地址**。\n\n只允许运行在 CanDo 所在的这台电脑上（127.0.0.1 / localhost / ::1，必须带端口）；CanDo 不走代理、不跟随重定向。数据格式为 JSON（UTF-8）。\n\n兼容规则：以后只加字段、不改含义，协议名保持 cando-tools/1；两边都必须忽略不认识的字段。不兼容的改动改用 cando-tools/2。\n\n扩展字段 x-cando-enforcement 说明 CanDo 对不合规内容的处理：reject = 整个服务或这次调用被拒绝；ignore = 这一项被忽略；truncate = 超出部分被截掉；clamp = 被改成允许范围内的值。\n\n给人看的说明：docs/外部工具接口.md。版本 1.0.0 对应 CanDo 1.15；1.1.0（CanDo 1.16）新增可选字段 Tool.example。"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:{port}",
+      "description": "只能是本机",
+      "variables": {
+        "port": {
+          "default": "8765",
+          "description": "服务监听的端口"
+        }
+      }
+    }
+  ],
+  "tags": [
+    {
+      "name": "tools",
+      "description": "工具清单和调用"
+    }
+  ],
+  "x-cando-protocol": "cando-tools/1",
+  "x-cando-limits": {
+    "manifest_max_bytes": 1048576,
+    "manifest_timeout_seconds": 5,
+    "manifest_cache_seconds": 20,
+    "tools_per_service": 30,
+    "params_per_tool": 20,
+    "enum_values_per_param": 10,
+    "input_files_per_call": 5,
+    "input_file_max_bytes": 20971520,
+    "output_files_per_call": 20,
+    "output_files_total_max_bytes": 52428800,
+    "response_max_bytes": 83886080,
+    "text_max_chars": 20000,
+    "error_max_chars": 500,
+    "timeout_default_seconds": 120,
+    "timeout_max_seconds": 600,
+    "reserved_param_names": [
+      "save_to",
+      "reason"
+    ],
+    "output_file_name_max_chars": 120,
+    "rejected_output_extensions": [
+      ".appx",
+      ".bat",
+      ".cmd",
+      ".com",
+      ".cpl",
+      ".dll",
+      ".exe",
+      ".hta",
+      ".jar",
+      ".js",
+      ".jse",
+      ".lnk",
+      ".msi",
+      ".msix",
+      ".pif",
+      ".ps1",
+      ".psm1",
+      ".reg",
+      ".scr",
+      ".sh",
+      ".url",
+      ".vbe",
+      ".vbs",
+      ".wsf",
+      ".wsh"
+    ]
+  },
+  "paths": {
+    "/tools": {
+      "get": {
+        "tags": [
+          "tools"
+        ],
+        "operationId": "listTools",
+        "summary": "工具清单",
+        "description": "CanDo 在接入时、以及之后每隔一段时间（缓存 20 秒）调用，5 秒内必须返回，响应体不超过 1 MB。",
+        "responses": {
+          "200": {
+            "description": "这个服务提供的全部工具",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Manifest"
+                },
+                "example": {
+                  "protocol": "cando-tools/1",
+                  "service": {
+                    "name": "画图服务",
+                    "version": "0.3"
+                  },
+                  "tools": [
+                    {
+                      "name": "bar_chart",
+                      "title": "画柱状图",
+                      "description": "把一组数字画成 SVG 柱状图",
+                      "example": "把 3、5、2 画成柱状图",
+                      "params": {
+                        "type": "object",
+                        "properties": {
+                          "values": {
+                            "type": "array",
+                            "description": "数值列表"
+                          },
+                          "data": {
+                            "type": "string",
+                            "format": "cando-file",
+                            "description": "数据文件"
+                          }
+                        },
+                        "required": [
+                          "values"
+                        ]
+                      },
+                      "makes_files": true,
+                      "timeout": 60
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tools/{name}": {
+      "post": {
+        "tags": [
+          "tools"
+        ],
+        "operationId": "callTool",
+        "summary": "调用一个工具",
+        "description": "CanDo 只在用户确认之后调用。超过这个工具声明的 timeout 没有返回，按失败处理。\n\nHTTP 状态码用 200 即可，成功还是失败看响应体里的 ok。返回非 200，或响应体不是下面约定的 JSON，CanDo 一律按失败处理。",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "description": "工具名，即清单里的 Tool.name",
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,39}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CallRequest"
+              },
+              "example": {
+                "args": {
+                  "values": [
+                    3,
+                    5,
+                    2
+                  ],
+                  "data": {
+                    "name": "data.csv",
+                    "base64": "YSwxCmIsMgo="
+                  }
+                },
+                "call_id": "8f2a41d09b3c"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "调用结果：成功（ok 为 true）或失败（ok 为 false）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/CallSuccess"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CallFailure"
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "成功，交回一个新文件",
+                    "value": {
+                      "ok": true,
+                      "text": "画好了 3 根柱子",
+                      "files": [
+                        {
+                          "name": "chart.svg",
+                          "base64": "PHN2Zy8+"
+                        }
+                      ]
+                    }
+                  },
+                  "replace": {
+                    "summary": "成功，交回某个输入文件的新版本",
+                    "value": {
+                      "ok": true,
+                      "text": "已插入图 1",
+                      "files": [
+                        {
+                          "name": "main.tex",
+                          "base64": "XGRvY3VtZW50Y2xhc3M=",
+                          "replaces": "tex"
+                        }
+                      ]
+                    }
+                  },
+                  "failure": {
+                    "summary": "失败",
+                    "value": {
+                      "ok": false,
+                      "error": "values 必须是数字列表"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "任何非 200 的状态码都按失败处理；响应体建议仍然是 CallFailure，这样用户能看到原因",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CallFailure"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Manifest": {
+        "type": "object",
+        "required": [
+          "protocol",
+          "tools"
+        ],
+        "properties": {
+          "protocol": {
+            "type": "string",
+            "pattern": "^cando-tools/1",
+            "description": "必须以 cando-tools/1 开头",
+            "x-cando-enforcement": "reject",
+            "example": "cando-tools/1"
+          },
+          "service": {
+            "$ref": "#/components/schemas/Service"
+          },
+          "tools": {
+            "type": "array",
+            "maxItems": 30,
+            "items": {
+              "$ref": "#/components/schemas/Tool"
+            },
+            "description": "最多 30 个，多出的被忽略；名字重复的，后面的被忽略",
+            "x-cando-enforcement": "ignore"
+          }
+        }
+      },
+      "Service": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 40,
+            "description": "服务的名字，显示给用户",
+            "x-cando-enforcement": "truncate"
+          },
+          "version": {
+            "type": "string",
+            "maxLength": 20,
+            "description": "服务自己的版本号",
+            "x-cando-enforcement": "truncate"
+          }
+        }
+      },
+      "Tool": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,39}$",
+            "description": "小写字母开头，只含小写字母、数字、下划线，最多 40 个字符。智能体看到的全名是 ext.<用户起的短名>.<name>",
+            "x-cando-enforcement": "ignore"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 30,
+            "description": "给用户和智能体看的短标题；不给就用 name",
+            "x-cando-enforcement": "truncate"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "给智能体看：这个工具做什么、什么时候该用",
+            "x-cando-enforcement": "truncate"
+          },
+          "example": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "可选。给用户看的一句示例，写成用户会说的话。只显示在能力中心的卡片上，不进系统提示（1.1.0 新增）",
+            "x-cando-enforcement": "truncate"
+          },
+          "params": {
+            "$ref": "#/components/schemas/ParamsSchema"
+          },
+          "makes_files": {
+            "type": "boolean",
+            "default": false,
+            "description": "这个工具会不会生成新文件。为 true 时，智能体可以多填一个 save_to 指定保存位置（save_to 由 CanDo 处理，不会发给服务）"
+          },
+          "timeout": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 600,
+            "default": 120,
+            "description": "秒。不给或不大于 0 时按 120；超过 600 按 600",
+            "x-cando-enforcement": "clamp"
+          }
+        }
+      },
+      "ParamsSchema": {
+        "type": "object",
+        "description": "这个工具的参数，写成 JSON Schema。CanDo 只读取 properties 和 required，其余字段忽略。最多 20 个参数，多出的被忽略。",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "object"
+            ]
+          },
+          "properties": {
+            "type": "object",
+            "maxProperties": 20,
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ParamSpec"
+            },
+            "description": "键是参数名：规则和工具名相同（^[a-z][a-z0-9_]{0,39}$），并且不能是 save_to 或 reason（CanDo 保留）。不合规的参数被忽略",
+            "x-cando-enforcement": "ignore"
+          },
+          "required": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "必填的参数名"
+          }
+        }
+      },
+      "ParamSpec": {
+        "type": "object",
+        "description": "一个参数。CanDo 只读取下面四个字段。",
+        "properties": {
+          "type": {
+            "type": "string",
+            "maxLength": 10,
+            "description": "string / number / integer / boolean / array / object",
+            "example": "string"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 80,
+            "description": "给智能体看的参数说明",
+            "x-cando-enforcement": "truncate"
+          },
+          "enum": {
+            "type": "array",
+            "maxItems": 10,
+            "items": {},
+            "description": "可选值，最多 10 个，每个最多 20 个字符",
+            "x-cando-enforcement": "truncate"
+          },
+          "format": {
+            "type": "string",
+            "description": "写 cando-file 表示这是文件参数：智能体填授权文件夹里的路径，CanDo 读出文件后把这个参数换成 FileIn 再发给服务。一次调用最多 5 个文件，每个最多 20 MB",
+            "example": "cando-file"
+          }
+        }
+      },
+      "CallRequest": {
+        "type": "object",
+        "required": [
+          "args"
+        ],
+        "properties": {
+          "args": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "只包含这个工具在 params 里声明过的参数。文件参数的值是 FileIn。必填参数缺失时 CanDo 不会发出调用"
+          },
+          "call_id": {
+            "type": "string",
+            "description": "每次调用都不同，写日志用"
+          }
+        }
+      },
+      "FileIn": {
+        "type": "object",
+        "required": [
+          "name",
+          "base64"
+        ],
+        "description": "CanDo 交给服务的一个文件。服务拿不到路径，也碰不到用户的磁盘。",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "文件名，不含路径"
+          },
+          "base64": {
+            "type": "string",
+            "format": "byte",
+            "maxLength": 27962028,
+            "description": "文件内容（标准 base64）。原文件最多 20 MB"
+          }
+        }
+      },
+      "CallSuccess": {
+        "type": "object",
+        "required": [
+          "ok"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 20000,
+            "description": "给智能体看的结果。超出 2 万字的部分被截掉",
+            "x-cando-enforcement": "truncate"
+          },
+          "files": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/FileOut"
+            },
+            "description": "交回的文件，最多 20 个，合计不超过 50 MB。全部作为“修改建议”，用户确认后才保存",
+            "x-cando-enforcement": "reject"
+          }
+        }
+      },
+      "FileOut": {
+        "type": "object",
+        "required": [
+          "name",
+          "base64"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[^:*?\"<>|]+$",
+            "description": "文件名，最多 120 个字符，不能含 : * ? \" < > |；带了路径的只取最后一段。以 . 开头的文件、密钥类文件、可执行文件和脚本（扩展名见 x-cando-limits.rejected_output_extensions）CanDo 不保存，整次调用按失败处理",
+            "x-cando-enforcement": "reject"
+          },
+          "base64": {
+            "type": "string",
+            "format": "byte",
+            "description": "文件内容（标准 base64）",
+            "x-cando-enforcement": "reject"
+          },
+          "replaces": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,39}$",
+            "description": "可选。填这次调用里某个文件参数的名字，表示这是那个输入文件的新版本：CanDo 检查原文件没被别人改过，备份后替换，可撤销。不填就是新文件：有同名文件时自动改名，不覆盖",
+            "x-cando-enforcement": "reject"
+          }
+        }
+      },
+      "CallFailure": {
+        "type": "object",
+        "required": [
+          "ok"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "enum": [
+              false
+            ]
+          },
+          "error": {
+            "type": "string",
+            "description": "失败原因，原样显示给用户和智能体，请用中文写清楚。超出 500 字的部分被截掉",
+            "x-cando-enforcement": "truncate"
+          }
+        }
+      }
+    }
+  }
+}

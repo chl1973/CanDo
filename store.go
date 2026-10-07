@@ -29,6 +29,7 @@ type User struct {
 	WebSearchProvider string        `json:"web_search_provider,omitempty"`
 	AgentMemory       string        `json:"agent_memory,omitempty"`
 	AgentPolicy       *AgentPolicy  `json:"agent_policy,omitempty"`
+	AgentExt          []ExtService  `json:"agent_ext,omitempty"` // 接入的外部工具服务（extools.go）
 	Disabled          bool          `json:"disabled"`
 	CreatedAt         time.Time     `json:"created_at"`
 }
@@ -226,6 +227,7 @@ type DB struct {
 	ResearchJobs  []*ResearchJob   `json:"research_jobs,omitempty"`
 	Drafts        []*WDraft        `json:"drafts,omitempty"`
 	Contracts     []*PaperContract `json:"contracts,omitempty"`
+	Papers        []*WPaper        `json:"papers,omitempty"` // 全文组装（fullpaper.go）
 	AgentTasks    []*AgentTask     `json:"agent_tasks,omitempty"`
 	Settings      Settings         `json:"settings"`
 	NextUserID    int              `json:"next_user_id"`

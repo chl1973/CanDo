@@ -760,6 +760,9 @@ func toolLabel(tool string, args map[string]any) string {
 	case "use_skill":
 		return "使用技能“" + str(args["name"]) + "”"
 	}
+	if strings.HasPrefix(tool, "ext.") {
+		return "调用外部工具 " + tool
+	}
 	return tool
 }
 
@@ -784,6 +787,9 @@ func (a *App) execTool(s *agentSession, me *Me, tool string, args map[string]any
 }
 
 func toolLabelShort(t string) string {
+	if strings.HasPrefix(t, "ext.") {
+		return "外部工具（" + t + "）"
+	}
 	return map[string]string{"list_folders": "查看授权文件夹", "list_dir": "列出文件夹", "search_files": "查找文件", "read_file": "读取文件",
 		"edit_file": "提交修改", "write_file": "提交写入", "check_latex": "检查 LaTeX", "recognize_image": "识别图片", "search_library": "检索资料库",
 		"run_command": "运行命令", "file_op": "整理文件", "open": "打开", "fetch_url": "读取网页", "search_papers": "检索文献", "add_paper": "收入文献",
@@ -792,6 +798,9 @@ func toolLabelShort(t string) string {
 }
 
 func (a *App) execToolErr(s *agentSession, me *Me, tool string, args map[string]any) (string, string, error) {
+	if strings.HasPrefix(tool, "ext.") {
+		return a.toolExternal(s, me, tool, args)
+	}
 	switch tool {
 	case "list_folders":
 		fs := a.agentFolders(me)

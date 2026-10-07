@@ -8,3 +8,6 @@ tools/e2e/out/
 brand/png/
 # 安卓签名密钥：私下备份，不要提交到公开仓库
 android/release.keystore
+# Python 缓存
+__pycache__/
+*.pyc

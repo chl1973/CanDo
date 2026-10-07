@@ -250,7 +250,7 @@ async function pageHome() {
   const four = isTeacher()
     ? kpi("#/projects", "k4", "i-inbox", st.pending_reviews || 0, "项待我审核")
     : kpi("#/projects", "k4", "i-inbox", (hm.todos || []).length, "件待办");
-  const quick = [["#/mine", "i-upload", "上传论文"], ["#/writing/draft", "i-writing", "AI 起草"], ["#/writing/check", "i-check", "格式检查"], ["#/assistant", "i-formula", "图片转 LaTeX"], ["#/mine/research", "i-radar", "深度调研"]];
+  const quick = [["#/mine", "i-upload", "上传论文"], ["#/writing/draft", "i-writing", "AI 起草"], ["#/writing/check", "i-check", "格式检查"], ["#/assistant", "i-formula", "图片转 LaTeX"], ["#/mine/research", "i-radar", "深度调研"], ["#/assistant/tools", "i-grid", "能力中心"]];
   const todos = (hm.todos || []).map((t) => {
     const [i, c, n] = TODO[t.kind] || TODO.due;
     if (t.kind.startsWith("contract_")) return `<a class="lrow" href="#/writing/contract" data-act="homeContract" data-id="${esc(t.id)}"><span class="lic ${c}">${ic(i, "sm")}</span><div><div class="lt">${esc(t.title)}</div><div class="ls">${n} · ${esc(t.who || "")}</div></div></a>`;

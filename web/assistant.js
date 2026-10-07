@@ -1,5 +1,6 @@
 // AI 助手：图片转 LaTeX、手绘转图（所有设备可用）、本机智能体（只在运行工作台的电脑上可用）、操作记录
 import { $, $$, esc, api, toast, modal, closeModal, actions, fmtTime } from "/core.js";
+import { renderCapCenter } from "/capcenter.js";
 import { exportPDF, tectonicBtn } from "/texpdf.js";
 import { renderSketch } from "/sketch.js";
 
@@ -105,18 +106,29 @@ document.addEventListener("paste", async (e) => {
 // ---------------- 页面 ----------------
 export async function pageAssistant(main, tab) {
   A.st = await api("GET", "/api/agent/status");
-  A.tab = ["sketch", "agent", "logs"].includes(tab) ? tab : "img";
+  A.tab = ["sketch", "agent", "tools", "logs"].includes(tab) ? tab : "img";
   if (!A.st.local && (A.tab === "agent" || A.tab === "logs")) A.tab = "img";
   main.innerHTML = `<h2>AI 助手</h2>
     <div class="tabs">
       <button class="${A.tab === "img" ? "on" : ""}" data-act="asTab" data-t="img">图片转 LaTeX</button>
       <button class="${A.tab === "sketch" ? "on" : ""}" data-act="asTab" data-t="sketch">手绘转图</button>
       <button class="${A.tab === "agent" ? "on" : ""}" data-act="asTab" data-t="agent">本机智能体</button>
+      <button class="${A.tab === "tools" ? "on" : ""}" data-act="asTab" data-t="tools">能力中心</button>
       ${A.st.local ? `<button class="${A.tab === "logs" ? "on" : ""}" data-act="asTab" data-t="logs">操作记录</button>` : ""}
     </div><div id="asBody"></div>`;
   renderTab();
 }
 actions.asTab = (el) => { A.tab = el.dataset.t; history.replaceState(null, "", "#/assistant/" + A.tab); $$(".tabs:not(.sub) button").forEach((b) => b.classList.toggle("on", b === el)); renderTab(); };
+
+// 切到某个标签（可以同时指定智能体右侧显示哪一栏）
+function showTab(tab, side) {
+  A.tab = tab;
+  if (side) A.side = side;
+  history.replaceState(null, "", "#/assistant/" + tab);
+  $$(".tabs:not(.sub) button").forEach((b) => b.classList.toggle("on", b.dataset.t === tab));
+  renderTab();
+}
+actions.asGoTools = () => showTab("tools");
 
 // 把一段任务（和图片）交给本机智能体
 function goAgent(draft, attach) {
@@ -135,6 +147,7 @@ function renderTab() {
   if (A.tab === "img") return renderImg(b);
   if (A.tab === "sketch") return renderSketch(b, { local: A.st.local, vision: A.st.vision, visionOK: A.st.vision_configured, toAgent: (t) => goAgent(t, []) });
   if (A.tab === "logs") return renderLogs(b).catch((e) => (b.innerHTML = `<div class="msg">${esc(e.message)}</div>`));
+  if (A.tab === "tools") return renderCapCenter(b, { toAgent: (t) => goAgent(t, []), toFolders: () => showTab("agent", "folders") }).catch((e) => (b.innerHTML = `<div class="msg">${esc(e.message)}</div>`));
   if (!A.st.local) {
     b.innerHTML = `<div class="card"><h3>本机智能体</h3><p>为了安全，本机智能体<b>只能在运行工作台的电脑上使用</b>：它会读写这台电脑上你授权的文件夹、运行命令，手机和其他电脑不能操作。</p>
       <p class="muted">在手机上可以用“图片转 LaTeX”和“手绘转图”：拍下公式、表格、手写笔记或草图，直接得到 LaTeX。</p></div>`;
@@ -242,6 +255,7 @@ async function renderAgent(b) {
         <select data-change="agSwitch" style="width:auto;max-width:220px"><option value="">＋ 新对话</option>${sessions.map((s) => `<option value="${esc(s.id)}" ${s.id === A.sid ? "selected" : ""}>${esc(s.title || "（空对话）")} · ${fmtTime(s.updated)}</option>`).join("")}</select>
       </div>
       ${st.configured ? "" : `<div class="msg">还没有可用的 AI 模型，请先到 <a href="#/settings">设置</a> 添加。</div>`}
+      <div id="agTools" class="agtools"></div>
       <div id="agUnattended"></div>
       <div id="agSteps" class="steps"></div>
       <div id="agApprove"></div>
@@ -264,6 +278,7 @@ async function renderAgent(b) {
   A.draft = "";
   renderAttach();
   renderSide();
+  renderToolStrip();
   $("#agText").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); $("#agGo").click(); } });
   const drop = $(".agchat");
   drop.addEventListener("dragover", (e) => e.preventDefault());
@@ -272,8 +287,21 @@ async function renderAgent(b) {
   $("#agSteps").innerHTML = A.sid ? "" : introHTML();
   if (A.sid) await poll(true);
 }
+// 输入框上方的一行：现在有哪些能力可用，接入了哪些外部工具（点一下把示例填进输入框）
+async function renderToolStrip() {
+  const d = await api("GET", "/api/agent/capabilities").catch(() => null);
+  const box = $("#agTools");
+  if (!box || !d) return;
+  const ext = d.services.filter((s) => s.enabled && s.ok).flatMap((s) => s.tools);
+  box.innerHTML = `<span class="muted">能力：内置 ${d.counts.ready} 项${ext.length ? " · 接入的工具：" : " · 还没有接入外部工具"}</span>
+    ${ext.slice(0, 6).map((t) => `<button type="button" class="chip" data-act="agUseTool" data-ex="${esc(t.example || `用“${t.title}”工具：`)}" title="${esc(t.description)}">${esc(t.title)}</button>`).join("")}
+    ${ext.length > 6 ? `<span class="muted">等 ${ext.length} 个</span>` : ""}<span class="sp"></span><a href="#" data-act="asGoTools">能力中心 →</a>`;
+}
+actions.agUseTool = (el) => { const t = $("#agText"); if (!t) return; t.value = el.dataset.ex; t.focus(); };
+
 function introHTML() {
   return `<div class="muted agintro"><p>告诉智能体要做什么，它会自己规划步骤：在授权文件夹里查找、阅读、修改和整理文件，运行命令和 Python 脚本，编译 LaTeX 出 PDF，读网页、查文献。</p>
+    <p>想知道它都能做什么、怎么接入同学写的工具？看 <a href="#" data-act="asGoTools">能力中心</a>。</p>
     <p><b>安全：</b>改文件、移动、删除都要你在“待确认”里点应用（删除先放进回收区，可撤销）；运行命令、打开文件前会弹出确认；它只能碰你授权的文件夹。</p></div>`;
 }
 
@@ -311,6 +339,8 @@ async function renderFolders() {
       <p class="muted">删除、改注册表、下载执行、关机等危险命令<b>每次都会问</b>，不能设为始终允许。</p>
       <button type="submit" class="pri sm">保存权限</button>
     </form>
+    <h4>外部工具</h4>
+    <p class="muted">接入和管理合作者写的工具，已经搬到 <a href="#" data-act="asGoTools">能力中心</a>：每个工具一张卡片，可以直接点“用它”。</p>
     <h4>LaTeX 编译</h4>
     ${eng.engine.found ? `<p>已检测到 <b>${esc(eng.engine.dist)}</b> ${esc(eng.engine.version || "")}（${eng.engine.tectonic ? "便携版，第一次编译会自动下载宏包，需要联网" : (eng.engine.xelatex ? "XeLaTeX" : "") + (eng.engine.xelatex && eng.engine.pdflatex ? " / " : "") + (eng.engine.pdflatex ? "pdfLaTeX" : "")}）。智能体可以编译论文、根据报错自动修改。</p>`
       : `<p class="muted">没有检测到 LaTeX。最省事的是下载便携版 <b>Tectonic</b>（约 20 MB，不用安装，第一次编译自动下载宏包）：${eng.local ? tectonicBtn() : "（请在运行工作台的电脑上操作）"}</p>
@@ -573,11 +603,11 @@ function renderApproval(p) {
   if (A.pending && A.pending.id === p.id) return;
   A.pending = p;
   box.innerHTML = `<div class="approve ${p.danger ? "danger" : ""}">
-    <div class="row"><b>${p.kind === "open" ? "🗂 智能体想打开" : "⌨ 智能体想运行命令"}：${esc(p.title)}</b></div>
+    <div class="row"><b>${p.kind === "ext" ? "🧩 智能体想" + esc(p.title) : (p.kind === "open" ? "🗂 智能体想打开" : "⌨ 智能体想运行命令") + "：" + esc(p.title)}</b></div>
     <pre>${esc(p.detail)}</pre>
     ${p.danger ? `<div class="dangertext">⚠ ${esc(p.danger)}，请看清楚再决定</div>` : ""}
     <div class="row"><button class="pri sm" data-act="agApprove" data-d="once">允许一次</button>
-      ${p.can_always ? `<button class="sm" data-act="agApprove" data-d="always" title="以后运行 ${esc(p.always_key)} 开头的命令不再询问">始终允许“${esc(p.always_key)}”</button>` : ""}
+      ${p.can_always ? `<button class="sm" data-act="agApprove" data-d="always" title="${p.kind === "ext" ? "以后调用这个外部工具不再询问（可在“能力中心”里改回）" : "以后运行 " + esc(p.always_key) + " 开头的命令不再询问"}">始终允许“${esc(p.always_key)}”</button>` : ""}
       <button class="sm danger" data-act="agApprove" data-d="deny">拒绝</button><span class="sp"></span><span class="muted">10 分钟内不处理会自动拒绝</span></div></div>`;
   box.scrollIntoView({ block: "nearest", behavior: "smooth" });
 }
@@ -621,8 +651,13 @@ actions.agGoChange = (el) => {
 };
 
 const ST = { pending: ["待确认", "warn"], applied: ["已完成", "ok"], rejected: ["未采纳", ""], undone: ["已撤销", ""], conflict: ["未执行（有冲突）", "bad"] };
-const KIND = { create: "新建", modify: "修改", move: "移动", copy: "复制", mkdir: "新建文件夹", delete: "删除", pdf: "生成 PDF", files: "保存图片" };
-const kindName = (c) => (c.kind === "office" ? (c.sub === "create" ? "新建 Word" : "修改 Word") : KIND[c.kind] || c.kind);
+const KIND = { create: "新建", modify: "修改", move: "移动", copy: "复制", mkdir: "新建文件夹", delete: "删除", pdf: "生成 PDF", files: "保存文件" };
+const OFFICE = { docx: "Word", xlsx: "Excel", xlsm: "Excel", pptx: "PPT" };
+const kindName = (c) => {
+  if (c.kind !== "office") return KIND[c.kind] || c.kind;
+  const t = OFFICE[(c.path.split(".").pop() || "").toLowerCase()];
+  return t ? (c.sub === "create" ? "新建 " : "修改 ") + t : c.sub === "create" ? "新建" : "替换文件";
+};
 const base = (p) => (p || "").split(/[\\/]/).pop();
 function changeBody(c) {
   if (c.kind === "pdf") {

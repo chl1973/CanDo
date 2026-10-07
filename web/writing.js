@@ -2,16 +2,17 @@
 import { $, $$, esc, api, apiBg, toast, actions, takeOpenJob } from "/core.js";
 import { renderDraft } from "/draft.js";
 import { renderContract } from "/contract.js";
+import { renderFull } from "/fullpaper.js";
 
 const W = { tab: "guide", profiles: null, key: "", check: null };
 
 export async function pageWriting(main, tab) {
-  W.tab = ["check", "draft", "contract"].includes(tab) ? tab : "guide";
+  W.tab = ["check", "draft", "contract", "full"].includes(tab) ? tab : "guide";
   W.open = takeOpenJob(["AI 列提纲", "格式检查"]);
   if (!W.profiles) W.profiles = await api("GET", "/api/writing/profiles");
   main.innerHTML = `<h2>写论文</h2>
-    <p class="muted">刚进组、第一次写论文？先在“新手向导”看结构和格式要求、下载模板；动笔前用“论文契约”把要证明什么想清楚，并经审稿人视角的质疑；再用“AI 起草”按契约和写作规范起草，每句都标出依据；写完用“格式检查”找出格式和规范问题。</p>
-    <div class="tabs" id="wrTabs"><button class="${W.tab === "guide" ? "on" : ""}" data-act="wrTab" data-t="guide">新手向导</button><button class="${W.tab === "contract" ? "on" : ""}" data-act="wrTab" data-t="contract">论文契约</button><button class="${W.tab === "draft" ? "on" : ""}" data-act="wrTab" data-t="draft">AI 起草</button><button class="${W.tab === "check" ? "on" : ""}" data-act="wrTab" data-t="check">格式与投稿规范检查</button></div>
+    <p class="muted">刚进组、第一次写论文？先在“新手向导”看结构和格式要求、下载模板；动笔前用“论文契约”把要证明什么想清楚，并经审稿人视角的质疑；再用“AI 起草”按契约和写作规范一节一节地起草，每句都标出依据；各节写好后用“全文组装”拼成完整论文导出；也可以用“格式检查”检查自己写的文件。</p>
+    <div class="tabs" id="wrTabs"><button class="${W.tab === "guide" ? "on" : ""}" data-act="wrTab" data-t="guide">新手向导</button><button class="${W.tab === "contract" ? "on" : ""}" data-act="wrTab" data-t="contract">论文契约</button><button class="${W.tab === "draft" ? "on" : ""}" data-act="wrTab" data-t="draft">AI 起草</button><button class="${W.tab === "full" ? "on" : ""}" data-act="wrTab" data-t="full">全文组装</button><button class="${W.tab === "check" ? "on" : ""}" data-act="wrTab" data-t="check">格式与投稿规范检查</button></div>
     <div id="wrBody"></div>`;
   render();
 }
@@ -20,6 +21,7 @@ actions.wrTab = (el) => { W.tab = el.dataset.t; history.replaceState(null, "", "
 function render() {
   if (W.tab === "check") return renderCheck();
   if (W.tab === "contract") return renderContract($("#wrBody"), W.profiles, takeOpenJob(["生成论文契约", "审稿人攻击", "判定回应"])).catch((e) => ($("#wrBody").innerHTML = `<div class="msg">${esc(e.message)}</div>`));
+  if (W.tab === "full") return renderFull($("#wrBody"), W.profiles).catch((e) => ($("#wrBody").innerHTML = `<div class="msg">${esc(e.message)}</div>`));
   if (W.tab === "draft") return renderDraft($("#wrBody"), W.profiles, W.key, takeOpenJob(["生成论证骨架", "AI 起草"])).catch((e) => ($("#wrBody").innerHTML = `<div class="msg">${esc(e.message)}</div>`));
   renderGuide();
   // 从“后台任务”打开的提纲

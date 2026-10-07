@@ -3,9 +3,9 @@
 用户是这个项目的负责人（面向高校课题组的科研工作台），用中文交流，不是专业程序员：回复用简单中文，少用术语，改动前先说清楚要做什么。
 
 ## 这是什么
-- 产品：CanDo 可为（原“科研竞赛工作台”），理念 “Everyone can do research. 人人都能做科研。”当前版本见 `app.go` 的 `AppVersion`（1.14.0）。
+- 产品：CanDo 可为（原“科研竞赛工作台”），理念 “Everyone can do research. 人人都能做科研。”当前版本见 `app.go` 的 `AppVersion`（1.16.0）。
 - 形态：Go 单文件程序（只用标准库），运行在老师的 Windows 电脑上，浏览器打开网页界面；同一 Wi-Fi 的手机通过安卓 App（`android/`）或 iPhone 主屏幕网页 / iOS 工程（`ios/`）访问。数据全部在本机：`%LOCALAPPDATA%\KeyanWorkbench\data`（目录名保持旧名，不要改，否则升级丢数据）。
-- 下一阶段方向：见 `docs/平台化方案.md`（打破学术壁垒的公开交流平台）。进展记录见 `TEST_REPORT.md` 和 `build/使用说明.txt`。
+- 下一阶段方向：见 `docs/平台化方案.md`（打破学术壁垒的公开交流平台）；第一步“论坛模式 / 校内联盟版”的方案见 `docs/论坛模式.md`。进展记录见 `TEST_REPORT.md` 和 `build/使用说明.txt`。
 
 ## 常用命令
 ```bash
@@ -18,13 +18,14 @@ tools/e2e/run.sh                                   # 浏览器端到端测试（
 - 端到端测试依赖 Python3 + `pip install playwright` + `python -m playwright install chromium`。`-tags e2e` 构建会打开 `e2e_hooks.go` 里的测试开关（模拟 OpenAlex 等），正式版不要带这个标签。
 
 ## 代码结构
-- 后端：`app.go`（路由、CSP、静态文件）、`store.go`（JSON 存储，`Store.Update/View` 事务）、`auth.go`、`api_*.go`、功能文件（`contract.go` 论文契约（反谄媚让步门槛在服务端强制）、`writing_ai.go` AI 起草、`jobs.go` 后台任务、`home.go` 首页、`research.go` 深度调研、`ocr.go`、`agent2.go` 本机智能体、`office.go` / `agent_office.go` Word·Excel·PPT 读写（改 Word 只动 `word/document.xml` 里的正文段落，其余部件原样复制）、`websearch.go` 联网搜索（博查 / Tavily）、`tectonic.go` 便携 LaTeX、`drift.go` 偏离检查与导出前确认……）。每个功能都有 `*_test.go`。
+- 后端：`app.go`（路由、CSP、静态文件）、`store.go`（JSON 存储，`Store.Update/View` 事务）、`auth.go`、`api_*.go`、功能文件（`contract.go` 论文契约（反谄媚让步门槛在服务端强制）、`writing_ai.go` AI 起草、`jobs.go` 后台任务、`home.go` 首页、`research.go` 深度调研、`ocr.go`、`agent2.go` 本机智能体、`office.go` / `agent_office.go` Word·Excel·PPT 读写（改 Word 只动 `word/document.xml` 里的正文段落，其余部件原样复制）、`extools.go` 外部工具服务（合作者用 Python 等写的本机工具，约定见 `docs/外部工具接口.md`，机器可读的契约是 `docs/cando-tools.openapi.json`（改了上限或字段要两边一起改，`TestExtToolsOpenAPIContract` 会检查），示例 `tools/extool/example_server.py`，按契约检查服务用 `tools/extool/check_contract.py`；智能体循环、提示、文件读写和确认都留在 CanDo 这边）、`capabilities.go` 能力中心（AI 助手 → 能力中心：内置能力清单 + 外部工具卡片 + 给合作者的开发包；新增智能体工具时在 `builtinCapabilities` 里加一项）、`sysproxy.go` 出门走哪条路（环境变量代理 → Windows 系统代理 → 直连；本机代理放行、内网目标仍拒绝；下载全文、读网页、导入技能都用它）、`websearch.go` 联网搜索（博查 / Tavily）、`tectonic.go` 便携 LaTeX、`drift.go` 偏离检查与导出前确认、`fullpaper.go` 全文组装（各节草稿拼成全文，不调用模型；规则检查 + 作者确认后导出 Word / LaTeX / PDF）……）。每个功能都有 `*_test.go`。
 - 前端：`web/`（原生 ES 模块，无构建步骤，`go:embed` 打包进程序）。`core.js` 公共函数；`app.js` 路由和主要页面；其余按功能分文件。
 - 品牌：`brand/`（图标 SVG 母版、`render.py` 生成全套 PNG/ico、`README.md` 色系规范）。
 
 ## 必须遵守的约定
 - **CSP 禁止内联脚本**：不要写 `onclick=`。用 `data-act="名称"` / `data-change` / `data-input` / `data-submit`，在 `actions` 里注册处理函数（见 `core.js`）。
 - **颜色只用 `web/style.css` 顶部的变量**（浅色 / 深色两套）。主色深群青 #1E2AB0，纸色 #F6F4EE，墨色 #14161F，深色模式主色 #7C86FF。图标用 `index.html` 里的 SVG sprite：`<svg class="ic"><use href="#i-xxx"/></svg>`。
+- **接口**：前后端只通过 `/api/` 接口来往，清单见 `docs/API.md`（自动生成）。新接口在 `app.go` 的 `apiMux` 里登记，行末写一句 `// 说明`；改了接口运行 `UPDATE_API_DOC=1 go test -run TestAPIDoc .` 更新清单。`TestFrontendAPICalls` 会检查前端用到的接口后端都有。改接口尽量只加字段，不删不改含义。
 - **耗时的 AI 接口**用 `a.bg("任务名", handler)` 包装，前端用 `apiBg(...)`，这样可以后台运行、离开页面不中断。
 - **模型调用**走 `modelFor / callValidated`，输出必须是 JSON 并在后端校验引用 ID（不存在的出处要标出来，不能让模型编造）。
 - **权限**：无权访问和不存在都返回 404；个人资料只有本人可见，共享的论文对组内只读；本机智能体只允许本机访问、只能碰授权文件夹、修改要用户确认、不读密钥类文件。

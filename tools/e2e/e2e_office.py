@@ -27,7 +27,7 @@ async def main():
         await pg.goto(B+"/#/assistant/agent"); await pg.reload(); await pg.wait_for_selector("#agText")
         await pg.fill("#agText","帮我改一下 Word：摘要里补上研究方法，引言后加一段研究缺口，再写一份修改说明"); await pg.click("#agGo")
         await pg.wait_for_selector("#agSideBody .change", timeout=30000)
-        await pg.wait_for_function("!document.querySelector('#agGo').disabled", timeout=30000)
+        await pg.wait_for_function("() => !document.querySelector('#agGo').disabled", timeout=30000)
         print("STEPS:", one(await pg.inner_text("#agSteps"))[:500] if await pg.query_selector("#agSteps") else "")
         chs=await pg.locator("#agSideBody .change").all_inner_texts()
         print("CHANGES:", [one(c)[:120] for c in chs])

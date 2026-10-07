@@ -224,7 +224,7 @@ function renderDraftText() {
   box.innerHTML = `<div class="card"><div class="row"><h3 style="margin:0">起草稿 · ${esc(d.section)}</h3><span class="tag warn">AI 辅助起草</span><span class="sp"></span>
       ${d.contract_id ? `<button class="sm" data-act="dfDrift">${d.drift_at ? "重新对照契约检查" : "对照契约检查"}</button>` : ""}
       <button class="sm pri" data-act="dfCopy">复制正文</button><button class="sm" data-act="dfDocx">下载 Word</button></div>
-    ${d.confirm ? `<p class="muted" style="margin:4px 0 0">✓ 已在 ${esc(fmtTime(d.confirm.at))} 确认过导出要求</p>` : ""}
+    ${d.confirm ? `<p class="muted" style="margin:4px 0 0">✓ 已在 ${esc(fmtTime(d.confirm.at))} 确认过导出要求。各节都写好后，可以到 <a href="#/writing/full">全文组装</a> 拼成完整论文</p>` : ""}
     <p class="muted">黄色：没有依据的陈述，需要补充出处或删改；橙色：需要你补充的内容。点 <span class="ev n">N</span>/<span class="ev f">F</span> 看依据原文。</p>
     <div class="dftext ${d.lang === "en" ? "en" : ""}">${d.paragraphs.map((ps) => `<p>${ps.map((s) => `<span class="dfs ${s.kind === "gap" ? "gap" : s.flag ? "flag" : ""}" title="${esc(s.flag || "")}">${esc(s.text)}${s.cites.map(evChip).join("")}</span>`).join(d.lang === "en" ? " " : "")}</p>`).join("")}</div>
     ${(d.refs || []).length ? `<h4>参考文献</h4>${d.refs.map((r) => `<div class="rditem">${esc(r)}</div>`).join("")}` : ""}
